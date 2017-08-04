@@ -1,0 +1,394 @@
+1. scheduler is a component of the kernel - may be treated 
+   as a set of routines and a set of data-structures - managed
+   using well defined rules and policies 
+
+2. scheduler() routine/method may be invoked by the system 
+   , when appropriate - one such is what we saw in the case
+   of preemption point - another is what we saw in the case
+   of blocking a process inside a system call  - one more 
+   such is when a process is terminated 
+
+3. scheduler may be divided into 2 components - one is the 
+   policy / algorithm component - the other is the context 
+   switching component - typically, study of scheduler 
+   revolves around policy part, mostly - this in addition
+   to other aspects that we discussed during preemption 
+   complete the entire picture of scheduling in a system 
+
+4. there are several policies proposed theoritically - 
+   not all are used in practice - even if used, there are
+   modifications to theoretical policies, when they are 
+   implemented - these changes are for convenience !!!
+
+5. in addition, several scheduling policies may be implemented
+   in a given system - meaning, they may co-exist at the 
+   same time - depending upon applications' requirements,
+   one or more policies may be used in a given system 
+
+6. scheduling policies can be broadly divided into 2 categories :
+   non realtime scheduling policies and real time scheduling 
+   policies 
+
+7. in short, real time scheduling policies provide strict 
+   scheduling priorities - non real time policies do not 
+   implement strict scheduling priorities - their use
+   is highly dependent on the applications and system's
+   requirements !!!
+
+8. typically non real time scheduling policies are more
+   commonly used - 2 such policies are commonly used
+   are time-slicing and time-sharing policies - a less
+   common policy is first come first serve (FCFS) 
+
+   Note: whenever we study about a scheduler, the following
+         are the key points :
+
+               - when the scheduler is invoked - this is
+                 where the control of the scheduler is
+                 managed !!! one is the interrupt handling 
+                 and the other is system call API - there are
+                 more subtle cases !!!!
+               - what happens when a scheduler is invoked ???
+                    this is where, policy of the scheduler 
+                    comes into play 
+               - what happens to the current process when the 
+                 scheduler decides preemption ??
+                   - this is in addition to adding the current 
+                     process to ready queue - there may be other
+                     house keeping !!
+               - which process is scheduled /selected for dispatching 
+                 ,when the scheduler is invoked ??
+                    - this is where the policy comes into play !!!
+               - in all the above cases, ready queue/lists are 
+                 manipulated to manage pds or other descriptors !!!
+
+
+
+9. let us start with FCFS - it is not a bad policy as 
+   it appears - if a process is scheduled by the scheduler,
+   process will be executed on the processor till one of 
+   the following occur - process terminates(normally/abnormally), 
+   process blocks or process yields !!! in most modern operating
+   systems, there is a special system call which enables a 
+   process to voluntarily yield the cpu - this is known as
+   yielding - this yielding is the basis for co-operative 
+   scheduling - meaning, FCFS may be used more effectively 
+   with co-operative scheduling with the help of yielding 
+   system call !!! without yielding system call, FCFS may 
+   appear an useless scheduling policy !!! this scheduling 
+   policy may not be suitable for interactive/time sensitive
+   applications/tasks, if responsiveness is unacceptable !!!
+
+10. which type of scheduling policy may be better suited for 
+    such interactive applications/tasks ???
+
+    - as per computing science, there is something called 
+     as ideal processor - an ideal processor uses ideal 
+     multitasking to share its cpu cycles/computing power among 
+     existing processes/tasks !!! let us assume there are
+     10 processes/tasks running on the processor for 
+     10seconds - each of them would be given 1/10th of 
+     the 10seconds of computing cycles using fine grained
+     multitasking !!! 
+
+    - what is meant by fine grained multitasking of processor
+      cycles ??
+        - typical example may be that the processor 
+          automatically/implicitly switches from on e
+          process/task to another process/task every 
+          100 cycles or 100 instructions or some fine grained
+          unit !!!
+        - what is the fundamental requirement for such a 
+          processor, which is different from a normal 
+          processor ??? processor must be able to 
+          maintain h/w contexts of several processes 
+          using several sets of registers !!
+        - to manage serveral processes without OS support,
+          processor must support several registers set !!!
+        - processor must implement process switching 
+          in h.w. without os support !!! 
+        - if there is a such processor, what are the advantages ??
+           - processes will be responsive !!
+           - overhead due to OS is minimized !!!
+           - processor will be more efficiently used !!!
+           - processor time is fairly allocated among processes ???
+                 - multiuser environment !!!
+                 - multithreading environment !!!! 
+ 
+
+    - what is meant by coarse grained multitasking of processor
+      cycles ??
+
+        - in this, 1ms or 4ms or 10ms or 20ms - basically, 
+          in the order of milliseconds !!!
+
+        - time-slice based RR scheduling policy and time-sharing
+          based fair-shared scheduling policy uses coarse
+          grained multitasking of cpu cycles 
+
+11. let us make a few conclusions on a typical RR scheduling 
+    policy :
+      - typically, time-slice allocated to a process
+        is fixed - say 10ms !!
+      - all processes are said to be of equal priority
+      - a process scheduled by the scheduler is said to 
+        execute on the processor until one of the following 
+        occurs:
+            - process terminates
+            - process blocks
+            - process's time-slice expires 
+      - RR scheduling policy requires the operating system 
+        support and smaller the time-slice better the 
+        concurrency and responsiveness, but higher switching 
+        over heads !!
+
+12. let us make a few conclusions on a typical time-sharing 
+    scheduling policy :(done by the scheduler of os, not by processor) 
+       - time-sharing is a better approximation of fine-grained
+         multitasking 
+
+       - in time-sharing policy, cpu time is divided into 
+         smaller time-slots - known as epochs !!!
+       - each epoch may be of 20ms/40ms or some no. which 
+         is reasonable and acceptable
+       - for a given epoch time, n processes which are ready
+         are allocated epoch time/n , in each epoch !!!
+       - time-share allocated to a process in given epoch
+         is dependent on the no. of processes in the ready
+         queue during the epoch !!!
+       - multitasking is based on the load in the system and 
+         in the case of time-slicing, it is not sensitive 
+         to the load conditions - in this sense, time-sharing 
+         is more closer to fine grained multitasking !!!
+         
+
+13. let us make a few conclusions on real time scheduling policies :
+
+    - the best example for a real-time scheduling policy 
+      is priority based scheduling policy 
+    - in this policy, there is no time-slice / no time-share, 
+      just a strict priority 
+    - whenever scheduler is invoked, it selects the highest 
+      priority based process and schedules it on the processor
+    - a process with the highest priority is allowed to 
+      execute on the processor until one of the following 
+      occurs:
+        - process terminates
+        - process blocks
+        - process is preempted by another higher priority process
+          that has entered the ready queue      
+             - if a current process is executing on the 
+               processor, how come a new, higher priority 
+               process enters ready queue ??
+                     - assumption is that we are in a 
+                       uniprocessor system !!!
+                     - current has woken up another 
+                       process via a system call API !!!
+                       - scheduler gets invoked after the 
+                       system call API !!
+                     - I/O interrupts/interrupt handlers may 
+                       wake up higher priority processes and
+                       end up calling the scheduler !!!  
+
+        - in a system that supports full preemption(meaning, 
+          user-space and system space), priorities are 
+          honoured immediately and this is also one of 
+          the advantages of fully preemptive system 
+        - in a partially preemptive system , priorities
+          may not be immediately honoured, if a system call
+          is being executed by a lower priority process !!! 
+        - scheduling policy is a factor that influences
+          whether a system must be fully preemptive or 
+          partially preemptive !!! it is highly configurable
+          in modern day systems !!!
+
+        - in a system that supports non real time scheduling
+          policies and real time scheduling policies, 
+          processes with real time scheduling policies are
+          given higher importance over processes with 
+          non real time scheduling policies !!! 
+
+        - in terms of implementation, do you find any specific
+          run-time problem in the case of priority based 
+          scheduling policy !!!
+            - starvation of low priority processes - this 
+              is not the responsibility of the scheduler,
+              it is upto the developer/admins. to 
+              tune the processes/tasks !!!      
+
+            - unlike time-slicing/time-sharing policies,
+              here processes are expected to be scheduled
+              as per their priorities - meaning, if there
+              are n processes, one with the highest priority 
+              must be selected for scheduling - if the
+              n is large, the overhead increases !! this 
+              is a practical problem in implementing 
+              priority based scheduling !!!
+               - a typical solution used is multi-level 
+                 ready queues - meaning, an array of 
+                 ready queues - one ready queue per priority 
+                 level !!!
+               - whenever a process is added to the array 
+                 of ready queues, pd of the process is added
+                 to the tail of the appropriate ready queue corresponding
+                 to the process's real time priority !!!
+               - whenever a process is selected by the scheduler,
+                 it scans the head of the queues -  from highest 
+                 priority queueu to the lowest priority queue - 
+                 this minimizes the overhead in scanning all 
+                 pds !!!
+               
+
+14. the above policies are implemented in a system like Linux 
+    with suitable changes and following are the main features:
+
+    - each process/task has its own scheduling parameters - 
+      due to this, it is possible to assign a different set 
+      of parameters to different tasks - this implies that 
+      each process may be assigned its own scheduling policy 
+      and appropriate parameters 
+ 
+    - policies and parameters may be assigned/modified using 
+      utilities or system call APIs, as appropriate !!!
+
+    - in the case time - sharing, non realtime policy, 
+      Linux provides the following features:
+        - typical epoch used is 20ms, but can be modified
+          if needed 
+        - still, fair-share scheduler used in linux will 
+          not scale for higher loads - at some point, 
+          it will break and multiprocessing(multiple processors are 
+          available in the computing system) is the 
+          next natural extension - still, the policies
+          discussed here are used along with multiprocessing 
+          related scheduling, as applicable !!
+        - in a typical fair-share scheduling, each process
+          is allocated the equal, fair time - share and 
+          all processes are of equal priority 
+        - in Linux, fair-share scheduler uses equal priority
+          and equal time-share, by default - the priority used
+          in this scheduler is known as nice priority and 
+          such a priority is a non real time priority !!! 
+        - however, if needed a non realtime priority 
+          known as nice priority can be modified such 
+          that time-share of a process may be increased or
+          decreased !!!
+Note : why is this nice priority known as non real time priority ???
+       what is the significance of the priority here ??
+              - we can adjust the time share of a non real time
+                process !!! 
+
+       whether this priority is a strict priority or 
+       not a strict priority ???
+
+             - not a strict priority !!!
+                - if a higher non real time priority is assigned
+                  to a process, it will be allocated a higher 
+                  time share - however, if its time share expires, 
+                  system will prempt and schedule a lower non real 
+                  time priority process - this is the reason, it is
+                  non real time and this is the reason it is 
+                  not strict !!!
+
+        - nice priority is in the range of -20 to +19 - 
+          -20 is the highest and +19 is the lowest - 
+          -20 assigns highest time-share for a process
+          and +19 assigns lowest time share for process-
+          -20 is said to have a large weightage - W
+          and +19 is said to have a very small weightage - w
+       -  other nice priorities are also assigned appropriate
+           weightage 
+       - let us assume there are 4 processes with default nice
+         priority - default weightage is wd - their time-shares 
+         are equal to 
+         20 ms * wd / 4*wd 
+         
+       - let us assume that 4 processes are assigned different 
+         nice priorities - their weightages will be w1,w2,w3 and
+         w4 - their time shares are as below:
+          -   20ms * w1/ w1+w2+w3+w4
+          -   20ms * w2/ w1+w2+w3+w4
+          -   so on 
+
+       - depending upon applications and the requirements 
+         of the system , we may fine tune the nice priority 
+         as needed !!! 
+   
+       - nice priority decides time-share, but does not ensure
+         that a process with higher nice priority will not 
+         be preempted by another process with lower nice
+         priority !!! this is the meaning of less strict 
+         priorities and non real time scheduling !!!
+ 
+
+
+    - a Linux system implements FF real-time scheduling 
+      policy, which has the following characteristics :
+      - each process may be assigned an unique real - time
+        priority in the range of 1 - 99 - 1 is the lowest 
+        and 99 is the highest !!
+      - for each priority, there is a level of ready queue
+         maintained in the array of ready queues !!
+      - in this case, if a process has highest priorit y
+        and ready to execute, it will be immediately 
+        given the processor and no other process with 
+        lower prioritycan preempt this process !!!
+      - if there are several processes ina particular
+        level of ready queue, they are honoured using 
+        FCFS policy at that level - still, priority based
+        scheduling is effective across the levels !! 
+      - is it possible to implement FCFS scheduling policy
+        using FF scheduling policy of Linux !!!         
+      - assign all processes in this policy to be equal - 
+        this can be achieved using "chrt" utility or 
+        sched_setscheduler() system call API - do look
+        into the manual pages of the utility and the 
+        system call !!  
+    - Linux also supports another policy known as 
+      RR policy - this is not the typical RR policy - 
+      its features are as below :
+        - it supports real time priorities in the range
+          1 - 99 (same as FF)
+        - most decisions are made based on priorities
+        - in addition, processes using RR policy also 
+          share the same set of ready queues as that 
+          of FF
+        - in addition, if there are processes of RR
+          policy at a given level, system applies 
+          time slicing among the set of equal priority 
+          processes - once again, by default RR is
+          a priority based scheduling , but can be 
+          used to implement typical RR, if priorities
+         of processes are set to be equal !!! 
+     - what happens if we assign a higher priority and 
+       FF policy to a process in the system and it 
+       may be a CPU bound process, occassionally !!! 
+
+15. for processes, following are useful:
+   
+      - sched_setscheduler()
+      - setpriority()
+      - sched_yield()
+      - nice , renice and chrt utilities !!!
+
+      Note: read the man pages of the above for details and 
+            usage - in most cases, read the footnotes of the 
+            manual pages - they are both useful and provide
+            pointers to other related /relevany system call APIs !!
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+ 
