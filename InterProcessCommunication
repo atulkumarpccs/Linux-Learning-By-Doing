@@ -1,0 +1,1002 @@
+Note: IPC - inter process communication - this applies to 
+      processes which can exchange data or synchronize execution
+      flow - in certain scenarios you may also encounter threads
+      and certain system level synchronization as well - 
+      in this context, focus is on the following:
+            - process to process synchronization
+            - process to process data exchange via system space
+            - process to process data exchange via user-space
+            - related mechanisms and implementation details 
+
+1. typically processes are independent and have independent 
+   address spaces . meaning, process A cannot access process B's
+   data area or information .processes may not 
+    be independent, they may interact - exchange data and synchronize
+    with respect to each other . 
+
+2. if process A is interested in communicating with process B,
+   typically operating systems can support several 
+   mechanisms to achieve this - one such is a message queue - 
+   one more is a pipe (unnamed or named) - one more is shared
+   memory - in addition, operating system may also provide 
+   synchronization mechanism like semaphore or signals
+
+     - some mechanisms are data-exchange 
+     - some mechanisms are locking/synchronization 
+
+3. let us assume process A wishes to pass data to process B, 
+   how can it be done  ? 
+
+    - one mechanism may be message passing 
+    - another is using pipe mechanism
+
+       - since the processes do not see each others data
+         spaces, system needs to store and forward data 
+         by receiving the data from one process and passing 
+         the data to another process .
+           - how will process A send a message to the system ?
+               a system call is needed 
+           - how will system maintain message(s) on behalf of
+             processes ?
+               a message queue data-structure is needed 
+           - how will process B receive a message from the system ?
+                a system call is needed 
+           - what happens, if process B attempts to receive message
+             before process A sends a message ?
+                a waitqueue of pds is needed to be maintained 
+                as part of message queue data structure 
+           - what happens if process A sends a message before process
+             B attempts to receive a message ?
+                system has to maintain the message till process B 
+                attempts to receive a message - a message queue
+                is maintained as part of message queue data structure .
+           - there will be a message queue object array - this holds 
+             pointers
+             to all message queue objects - there is one message queue
+             object for each message queue mechanism instance
+           - each message queue object maintains the following:
+                - a list of message headers - each message header
+                  is used to manage one message stored in the 
+                  message queue 
+                - messages are stored in the system buffers - 
+                  messages can be of variable size 
+                - size of the message is stored in the message header
+                - normally, oldest message is at the head of the    
+                  message queue and given to the receiver of message 
+                - in addition, a message queue object may also 
+                  maintain a wait queue - normally, this wait queue
+                  will be empty - pd of a process is maintained    
+                  in blocked state in the wq of a message queue object,
+                  if there is no message waiting the message queue .   
+                - each message queue object in the system will be
+                  storing an unique KEY value - this KEY uniquely
+                  identifies a message queue object and used by 
+                  system call APIs
+
+        - in most cases, system also is involved in synchronizing 
+          the activities of the processes that are involved in 
+          exchanging the data . meaning, there will be an 
+          implicit synchronization between the processes .  
+          - if a process A is expecting data from another process B
+            and initiating a receive call from a message queue,
+            the corresponding process A will be blocked in the 
+            wait queue of the corresponding message queue instance
+          - it is the responsibility of the system to wake-up 
+            the blocked process A, receiving process, when the sending
+            process B has sent a  message to the message queue 
+            instance .
+                
+
+         - let us assume a message queue object is initially 
+           empty . meaning, no messages and wq is also empty.
+         - let us assume process B invokes a receive system call 
+           API - what will happen ?
+                 - process B's contexts are saved 
+                 - process B is added to wq of mq object - 
+                   in blocked state
+                 - scheduler is invoked .
+         - let us assume that process A sends a message some
+           time in the future . what will happen ?
+                 - system call will add the message to the 
+                   mq object 
+                 - system call will scan the wq and if there
+                   is a process waiting, wake-up the process - 
+                   meaning, change the state to ready state and
+                   and add pd to ready queue 
+         - some time in the future, scheduler will schedule 
+           Process B - Process B will resume from the receive 
+           system call API - it will complete the receiving 
+           and return from system call API 
+         - in this order, processes will continue using the 
+           message and exchanging messages, with the help
+           of implicit synchronization implemented by the 
+           operating system .
+              - what is synchronization in this context ?
+                controlling execution of one process by another
+                process via mq's wq mechanism and conditions .
+
+      - a typical downside of this mechanism is that several 
+       data exchanges are to be done between user space and 
+       system space - which means, lot of copying between 
+       user -space buffers and system space buffers . if amount 
+       of data copied is large and frequently copied, may increase
+       latencies 
+
+
+4. let us assume that process A wishes to share certain data
+   region/space(virtual pages) with process B, how can it do so ? 
+   this involves
+   sharing page-frames via page-table/pte  manipulations .this 
+   sharing must be done in user-space, not in system space .
+
+         - unlike the message queue case, in this scenario, 
+           we will be not be passing data via system-space,
+           certain page-frames of process A will be shared 
+           with process B, using a mechanism known 
+           as shared memory mechanism .
+         - immediate advantage of this mechanism is that 
+           copying data to system space and back is avoided-
+           several system call APIs are avoided - so, faster
+           and more efficient .this mechanism reduces no of 
+           system call APIs during data exchange. 
+
+           - certain ptes of process A and certain ptes of process
+             B will be forced to point to the same set of page-frames
+             by the system with the help of a set of system 
+             calls .
+           - what is the difference between these shared page frames
+             and the shared page frames associated with system space ?
+               - shared user-space page frames can be accessed by 
+                 application code and shared system space page frames
+                 can be accessed by system space code only .
+               - user space shared memory can be accessed in user-space
+                 using simple pointers, not system call APIs .
+       
+         - the typical problem encountered, in the above case is 
+           known as race condition - race condition will lead 
+           to inconsistency in data and lead to inconsistent 
+           results - this is a very basic computing problem 
+           and operating system provided mechanisms to overcome
+           such problems
+            
+	- for a typical developer, mechanisms already
+          exit, but finding the problems, sections of code
+          having problems and solving them are critical .
+
+	- if 2 or more processes are sharing a shared variable(object/
+           data structure) and 
+           updating the variable such that there will inconsistency
+           in the results of the variable(objects/data structures), 
+           if a process is preempted
+           while it is executing its critical section and the other 
+           process is scheduled
+           to execute its critical section - meaning, updating the 
+           shared variable(objects/data structures) in the other 
+           process  - such a problem is known as a race condition 
+           due to concurrency and preemption .
+
+         - in the above case, there can be problem if 2 or more
+           processes are executing their related critical 
+           sections simultaneously, in a multiprocessor system .
+           such a problem is also a race condition - this is 
+           due to multiprocessing and parallel scheduling of 
+           processes .
+
+5. life of a semaphore - meaning, its life cycle and its
+   usage :
+
+    -  semaphore is a special system variable 
+       managed by the operating system, specially - like 
+       any other shared variable, this will also suffer
+       from race conditions and other issues discussed, above - 
+       system manages this special variable using certain 
+       sw and hw techniques - this enables this variable 
+       to behave as a super variable - see the discussion below .
+ 
+    -  a semaphore variable is maintained as part of 
+       a semaphore object .normally, only one semaphore
+       is maintained in a  semaphore object.
+         - a semaphore object is mostly maintained in system space
+         - in many cases, semaphore object may be maintained
+           partially in user-space and partially in system-space .
+
+    - for the discussion below, we are looking at a coventional 
+      semaphore - meaning, it is entirely maintained in system space .
+
+    -  a semaphore variable is constrained by certain rules - 
+       it can have value between 0 and a +ve no. decided
+       by the system and the developer - typically semaphore
+       value cannot drop below 0 - cannot be -ve - 
+       typically semaphore value is between 0 and 1, in 
+       many cases - although, it can also be +ve(>=1), in many cases .  
+          - max value of a semaphore is decided by operating system 
+          - current max value for a given application is decided 
+            by developer 
+          - binary semaphore has value between 0 and 1 
+          - counting semaphore has value between 0 and a +ve (>1,
+                                             decided by developer)
+    
+    -  system normally supports certain operations on a semaphore
+       - creation, initialization, decrement , increment and 
+         destruction (a semaphore object/semaphore is a logical resource)
+       - creation is supported by a system call - a semaphore 
+         object is created using this system call 
+       - initialization of a semaphore enables to initialize the
+         semaphore value as per developer's requirement - it can 
+         be 0 , 1 or a +ve no. - this is done using another 
+         system call API .subject to the rules of semaphore
+         ,operating system and application's requirement .
+       - let us assume that initial value of semaphore is 1
+       - decrement operation - decrement operation follows the
+         rules below:(another system call API)
+           - if the semaphore value is +ve, just decrement 
+             the value of semaphore by 1 and return success .
+           - if the semaphore value is 0, do not decrement,
+             change the state of the process to blocked and
+             add the process descriptor to the wait-queue 
+             of the semaphore object - this leads to blocking 
+             the process that has attempted a decrement operation
+             on the semaphore .
+           - a blocked process, in the wq of a semaphore may be
+             woken-up by another process that executes increment 
+             operation on the respective semaphore
+       - increment operation - increment operation follows the 
+         rules below:(another system call API) 
+             - if the semaphore's wq is empty, just increment 
+               the value of the semaphore by 1 and return success .
+             - if the semaphore's wq is non-empty, do not 
+               increment the semaphore's value, but wake-up 
+               a process that may be blocked in the wq of the
+               semaphore  and return success .     
+             - based on the above decrement operation and this
+               increment operation, we can understand that 
+               synchronization is managed by the semaphore .
+                 - processes may co-ordinate their execution 
+          
+        - destruction operation - destruction operation simply 
+          frees the semaphore object . the semaphore object 
+          and corresponding semaphore are no longer accessible 
+
+        - in reality, a semaphore is maintained as part of 
+          a semaphore object array / table .
+        - each semaphore object contains a semaphore variable,
+          certain credentials and a wait queue for maintaining
+          blocked process descriptors that attempted decrement
+          operation on this semaphore . 
+
+6. let us assume that we are using a semaphore/semaphore object 
+   to implement critical section of i++/i-- in 2 processes - 
+   meaning, a semaphore is used to provide atomicity to the
+   critical sections such that when a process A executing 
+   in the critical section is preempted and process B will 
+   be blocked, if it attempts to enter its critical section .
+   the same applies vice-versa, if process B is preempted     
+   in its critical section .
+
+   - let us assume process A(P1) is scheduled first - 
+     P1 will attempt to decrement the semaphore value and
+     semaphore will become 0 - in addition, P1 will continue
+     executing its critical section .
+
+   - let us assume P1 is preempted in the middle of its 
+     critical section - P1 will be preempted and P2 may 
+     be scheduled - P2 will attempt to decrement the 
+     semaphore value and P2 will be blocked in the wait 
+     queue of the semaphore - this ensures that P2 does
+     not enter into its critical section, when P1 is in 
+     the middle of its critical section .this ensures
+     that P1's critical section is atomic due to the 
+     use of a semaphore
+
+   - sometime in the future, P1 will be rescheduled and
+     it will complete its critical section and increment 
+     the semaphore - since P2 is blocked in the wq of 
+     the semaphore, when P1 increments the semaphore value,
+     semaphore value is not incremented, but P2 will be 
+     woken-up - what is the current value of the semaphore
+     after the increment operation and wake up of the P2 process
+     , in this context ? before P2 is rescheduled by the
+     scheduler ? during this increment operation, semaphore
+     value is not incremented and remains 0 .
+
+   - when P2 is woken-up, P2 will resume its execution from 
+     from decrement system call,complete the system call execution,
+     return from system call execution   and
+     enter its critical section - the semaphore value is
+     still maintained as 0, due to a tricky mechanism .
+     described above . once the critical section of P2 is completed, 
+     it will increment the semaphore - semaphore value will change
+     from 0 to 1 
+
+   - in the above sequence of execution , semaphore/semaphore
+     operations ensure that a set of instruction in a set 
+     of critical sections are  executed atomically with 
+     respect to the other .. meaning, instructions of a 
+     related critical section and instructions from another 
+     related critical section are not interleaved . this 
+     is achieved by using semaphores as described in the above
+     section and in the class diagram .
+         - semaphores ensure critical sections are executed 
+           atomically with respect to each other 
+         - due to this race conditions are prevented
+         - if race conditions are prevented,inconsistencies
+           of shared memory access are prevented . in short,
+           this is what we have achieved using locks .  
+
+ 
+    
+7. system call system routines implementing semaphore
+   operations may face race-conditions, if the system
+   supports system-space preemption and/or system supports
+   multi-processing - in these cases, semaphore value/
+   semaphore object will encounter inconsistency - such 
+   in consistency cannot be accepted as this will 
+   lead to inconsistencies in applications
+    - if there are race conditions in the semaphore operations, 
+      how can they be fixed ?
+
+       - we may disable hw interrupts before a semaphore operation
+         , in system space and enable hw interrupts after a semaphore
+         operation, in system space - we cannot do such activities
+         in user-space . this will decrease the responsiveness of 
+         the system - normally, a system's responsiveness is tightly 
+         clubbed with I/O responsiveness . as we will see it below,
+         this solution may not work on multiprocessor systems .this
+         may work in uniprocessor systems only .
+     
+      
+                Lock(sema->lock)
+                {
+
+                   while(test_and_set(sema->lock))
+                     do nothing
+                   endwhile
+                } 
+
+           - unLock(sema->lock)
+             {
+                 sema->lock = 0;
+             }
+
+
+           - in the above cases, 0 means lock is available 
+             and 1 means, lock is busy 
+
+           - in the above cases, if the lock is available,
+             it is locked and Lock() code just returns .
+           - in the above cases, if the lock is not available,
+             the Lock() code spin until lock variable is free .
+           - such a lock variable and its operations are 
+             together known as spinlock . these locks are
+             spinning locks and not blocking locks - semaphore
+             mechanisms are known as blocking locks . 
+           - in the uniprocessor context, has the usage of 
+             spinlock variable to protect semaphore operations
+             effective ? meaning, have we eliminated the 
+             race conditions in the semaphore operations ?
+               - this mechanism has eliminated the race condition
+                 , but wastes cpu cycyles in certain cases and 
+                   in certain cases, may lead a type of dead lock .
+                     - analyse for timeslicing/time sharing cases
+                     - analyse for priority based scheduling cases .
+           - such a solution is unacceptable and a slightly modified
+             solution is provided . before the lock is acquired, 
+             preemption flag is diabled in the system space - if this
+             preemption flag is disabled in the system space, no 
+             preemption can occur - meaning, scheduler will never
+             reschedule another process - in this context, there 
+             should not be any such wastage of cpu cycles .
+           - it is a combination of preemption disabling at the
+             scheduler level and also acquiring a spinlock - 
+             this combination works and works efficiently .
+           - the above solution using preemption disabling 
+             and spinlock works for uniprocessor - does the 
+             same solution work for multiprocessor systems - 
+             meaning, process1 and process2 may be scheduled
+             on different processors as per the systems'
+             load balancing on a MP system ?
+
+	 - in uniprocessor
+            - can you visualize this problem .
+              yes . there is a problem in uniprocessor 
+              system also .
+            - how to overcome such a problem ?
+ 
+        - in multiprocessor 
+             - can you visualize this problem .
+               yes . there is parallel execution and 
+               that leads to race-condition in system space .
+             - how to overcome such a problem ?
+
+        - in both the above cases, following is the real - problem:
+             - read - modify - write must be atomic 
+             - in our discussion, read - modify -write of one
+               related critical section and read-modify-write 
+               of another related critical section must not 
+               be interleaved .
+             - it does not really matter, we are in uniprocessor
+               or multiprocessor 
+
+   in order to solve these race conditions, system supports
+   a special lock known as spinlock - it works as mentioned below:
+
+   - it is a special variable in the system - space - it 
+     can hold one of the two values - 0 or 1 - 0 means lock
+     is available and 1 means lock is not available - this is 
+     a convention that is mostly followed
+
+   - spinlock()(lock()) operation will attempt to atomically    
+     set the value to 1 and read the previous value( this is 
+     a read- modify- write case for a spinlock() operation) . 
+     if the previous value was 0, lock is said to be obtained 
+     and spinlock() will return . if the spinlock()(lock()) 
+     operation finds
+     that the previous value of the lock was 1, spinlock() will 
+     continue spinning / busy waiting for the lock's value to 
+     be set to 0  - this is the reason why such a lock is given 
+     the name spinlock..
+
+   - spinunlock()(unlock()) operation will just set the value to 
+     0 - unlocked state - there is no great mechanism involved in 
+     this . 
+
+   - a lock of this type does not have a waitqueue - it does not 
+     block the process, if the lock is not available - instead,
+     it allows the process to busy-wait or spin . 
+
+   - spinlocks are special locks used to implement semaphores and 
+     other ipc mechanisms .
+
+   - spinlocks use special h/w, atomic instructions to implement   
+     atomic locking, which helps spinlock implementation - in 
+     turn, semaphores and other mechanisms benifit from spinlocks
+
+   - one major shortcoming of a spinlock is it does not support, 
+     waitqueues - meaning, blocking .
+  
+   - spinlocks are useful if the critical sections locked by 
+     spinlocks that are short  . meaning, for longer critical sections,
+     spinlocks tend to be inefficient when a spinlock is not available
+     and a process is attempting to lock the spinlock . this 
+     is one of the major reasons why spinlock is not so popular, 
+     in user-space - it is still popular in system space - in system space,
+     critical sections can be better controlled and there are certain 
+     scenarios, where semaphores or other locks cannot be used .
+     
+8. although  semaphore is typically treated as a lock and books describe
+   semaphores using critical sections, semaphores are not just locks - 
+   they can be used for counting resources and for typical synchronization -
+   both counting resources and synchronization can be understood using 
+   practical scenarios - synchronization may be explained theoretically,
+   in this context : 
+     - synchronization is controlling execution of a process by another
+   process via an operating system mechanism - one such popular synchronization
+   mechanism is semaphore - in many mechanisms, synchronization is implicit .
+     - if a process attempts to decrement a semaphore whose current value is
+   0, corresponding process will be added to the wq of the semaphore and 
+   state of the process is changed to blocked .
+     - if another process executes increment on the same semaphore due 
+       an event, increment system call will wake-up the blocked process
+     - the above is a clear example for synchronization, where a process
+       is controlled by another process via a semaphore .
+     - in the above example, there is no critical section and semaphore is not used
+       as a lock 
+     - even if a semaphore is used as a lock, still it uses synchronization 
+       to control a process by another process during locking / unlocking
+       operations . 
+
+
+     - can the above implementation of semaphore operations
+       work consistently in uniprocessor and multiprocessor 
+       environments ?
+         - preemption is not disabled in user-space - whatever
+           is discussed is only for system space issues - whenever
+           a process resumes in user-space, preemption is 
+           immediately restored to original state . preemption
+           is always enabled in user-space and hw interrupts are
+           always enabled in user-space .
+         - in uniprocessor, using the spinlock along with 
+           disabling preemption is redundant - find out 
+           how the real implementations are ? for the 
+           class room, this conclusion is ok .
+         - in multiprocessor, using the spinlock along with 
+           preemption disabling is not redundant - it is a
+           must . why so ?
+               - in this case, process1 and process2 may 
+                 execute system space critical sections
+                 of semaphore operations, simultaneously,
+                 on different processors . 
+               - what happens, if both processes access
+                 the spinlock locking simultaneously ?
+                      
+Note: in every process, certain virtual pages/virtual addresses are
+      reserved for system space usage - meaning, system space code,
+      system space data, system space dynamic memory and so on - 
+      in addition, in every process, such reserved virtual pages
+      are managed by system and mapped to the same set of page frames
+      - these page frames hold the system space code/data/dynamic memory 
+      and so on - since, such reserved pages in every process are 
+      mapped to the same set of system's page frames, such virtual 
+      pages of every process are said to be shared with respect to 
+      corresponding reserved virtual pages in other processes . 
+      these are also known as shared virtual pages, in system space .  
+
+
+
+9. shared memory related system call APIs and their functionalities:
+
+     - how is shared virtual pages / shared memory regions created 
+       between 2 or more processes, in user-space ? meaning,
+       what is the underlying setup that is needed to accomplish 
+       this ?  refer to point no. 4, above and then, resume 
+       with the discussion below :
+
+     - shmid = shmget(param1,param2,param3); 
+        - param1 is the key value - which is unique no. identifying
+          a particular shared memory object in the system - this 
+          is chosen by the developer .
+        - param2 is the size of the shared memory region managed
+          by the shared memory object, in the context . size of 
+          the shared memory region must be a multiple of page size .
+          - if we do not provide a size that is not a multiple of 
+            page size, system will round it up to next nearest 
+            multiple . 
+        - param3 provides a set of flags, which we will understand
+          as needed 
+        - if shmget() is successful, it will create a shared memory 
+          object in the system-space and return the corresponding
+          id for the shared memory object - further system call APIs
+          are expected to use this id as their parameter to access
+          this shared memory object 
+        - when shmget is invoked, a shared memory object may be 
+          created, if it does not exist - if the shared memory object
+          does exit already, system will just return its corresponding
+          id - when you use shmget(), be aware of these rules .
+        - shared memory object also maintains an array of page frame
+          base addresses - this is not same as page tables - this 
+          array only contains page frames that are used for the shared
+          memory region managed by this shared memory object . shared
+          virtual pages mapping a shared memory region of one or 
+          more processes will be using these shared page frames 
+          for their ptes .
+             - how this is achieved is discussed below .
+        - the no. of elements in the array is dependent on the 
+          size of the shared memory region - shared memory region
+          size is always a multiple of page-frame size . 
+        - when shmget() is invoked and shared memory object is 
+          newly created, the elements of the shared page frames
+          array are initialized to 0 - meaning, no shared page 
+          frames are allocated for a shared memory region, when 
+          shmget() creates shared memory object - this is based
+          on demand paging principle of virtual memory .
+              - meaning, page frames allocation for 
+                shared memory regions are deferred .
+
+        - can we access the shared memory area managed by the
+          shared memory object from a process ? meaning,
+          from the process that has created the shared memory 
+          object .
+        - if a process is interested in using a shared memory 
+          region associated with a shared memory object, the process 
+          must attach itself to the shared
+          memory object using shmat() system call API - shmat()
+          does the following:
+             - creates a new VAD, sets special shared flag in 
+               in the VAD,shmid of the associated shared memory 
+               object is also stored into the new VAD . 
+             - in addition, corresponding page table entires
+               may be created and initialized to 0 .
+             - shmat(param1,param2,param3) - param1 is the 
+               id of the shared memory object - param2 may be used
+               to tell the system the starting virtual address
+               to be used in the new VAD - if 0 is mentioned
+               as param2, system will assign a new set of 
+               virtual addresses to be used with this new VAD - 
+               0 is a preferred option - param3 is to pass flags-
+               normally, flags are not needed - 0 is commonly used .
+               refer to man page of shmat() to understand more 
+               on flags.
+             - if shmat() is successful, in addition to what was 
+               described earlier, it will return the first virtual 
+               address associated with the new VAD - in short,
+               these virtual addresses starting from the returned 
+               virtual address may be used to access shared memory 
+               region and associated page frames .   
+             - corresponding to the shared memory VAD, certain 
+               secondary page tables are created for this 
+               process and the secondary ptes are set to invalid . 
+             - each such shared memory related VAD is special - 
+               it will have a special shared flag set and also
+               the id of the shared memory object is stored in it .  
+             - let us assume all the above and most of what is 
+               discusssed below are in P1 (we see P2 after this .) 
+             - eventually, a process associated with a shared memory
+               region will attempt to access the shared memory region
+               via new set of virtual addresses - when a process 
+               attempts to access a new virtual address corresponding 
+               to a virtual page of the shared memory region, a page
+               fault exception will be generated - page fault 
+               exception handler will be invoked - as discussed during
+               virtual memory management, most steps are the same - 
+               however, there are changes - we will discuss the changes
+               only      
+             - after the faulting virtual address is verified with 
+               the available VADs of a process, system does the following:
+                - checks whether the VAD has the shared flag set
+                  (in the case of normal VADs, shared flag is not set .)  
+                - if true(shared memory case only), uses the 
+                  corresponding shared memory object id stored in 
+                  the VAD to access the associated shared memory 
+                  object(VAD and shared memory object are connected)
+                - after accessing the shared memory object, checks 
+                  the appropriate entry in the shared page-frames
+                  array for this particular shared virtual page -
+                  let us assume the shared memory region has 
+                  3 virtual pages and 3 elements in the shared
+                  page frames array .  how are they connected .
+                  - shared virtual page0 is mapped to page frame base
+                    address array[0] , shared virtual page 1 is mapped
+                    to page frame base address array[1] and so on . 
+                  if the mapped array element(can be 0th element,
+                  1st element or ith element or n-1th element)
+                  contains 0, allocates a new shared page frame, 
+                  stores its base address in 
+                  the particular entry of the shared page frames
+                  array, uses the page frame base address to 
+                  set up the current process's shared virtual page's
+                  pte entry - current process is restarted to 
+                  resume from faulting virtual address .
+                    - in the case of a normal page fault, 
+                      a new page frame will be allocated 
+                      immediately - in the shared memory virtual address
+                      page fault  case, a new page
+                      frame must be allocated via shared memory 
+                      object mechanism and its rules .
+ 
+              - shared memory objects and shared memory regions
+                are useless, if only one process is associated with
+                them - meaning, two or more processes must be 
+                associated with a shared memory object/shared memory 
+                region for this mechanism to be useful .
+              - let us assume that another process involved 
+                in sharing a shared memory region with the 
+                earlier process - it has to do the following 
+                actions - the discussion below is about P2 :
+                   - use shmget() with the same KEY value 
+                     as first process such that the second 
+                     process can access the same shared memory object 
+                   - in addition, second process must invoke 
+                     shmat() to associate itself with the 
+                     shared memory object/shared memory region .
+                       - when the second process attaches itself
+                         to the shared memory region via shmat()
+                         system call API, it will be provided 
+                         its own shared memory VAD and connection 
+                         to the shared memory object - this new VAD
+                         is also treated specially ..it has its
+                         own ptes in a secondary page table of Process p2-
+                         these ptes are initialized to 0, as per 
+                         virtual memory convention . 
+                   - after the above steps, if the second process
+                     attempts to access a shared virtual page
+                     allocated to it, following actions will be 
+                     taken:  
+                      - a page fault exception will be generated
+                        for this second process                 
+                      - after the faulting virtual address is verified 
+                        with the available VADs of a process, 
+                        system does the following:
+                          - checks whether the VAD has the shared flag set 
+                          - if true(shared memory case only), uses the 
+                            corresponding shared memory object id stored in 
+                            the VAD to access the associated shared memory 
+                            object
+                          - after accessing the shared memory object, checks 
+                            the appropriate entry in the shared page-frames
+                            array for this particular shared virtual page - 
+                            if the array element is 0, allocates a new
+                            shared page frame, stores its base address in 
+                            the particular entry of the shared page frames
+                            array, uses the page frame base address to 
+                            set up the current process's virtual page's
+                            pte entry - current process is restarted to 
+                            resume from faulting virtual address .
+            - in the above cases, if a process using a shared page/page
+              frame has encountered a page fault and a new page frame   
+              is allocated, that shared page frame's base address 
+              is maintained in the shared memory object's shared page
+              frames base address array - if another process also 
+              is attached to the same shared memory object and also
+              attempts to access the same shared page frame via 
+              its own shared virtual page, the stored base address
+              of the shared page frame will provided to the second
+              process as well - this is the principle of shared
+              memory region via shared memory object .
+            - the above actions will be repeated for all the shared
+              virtual pages and corresponding shared page frames .1
+            - this is how, the system shares page frames between 
+              interested processes via specially setup VADs and 
+              shared memory objects .
+
+10. unix/linux  sempahore system call APIs and their working :
+    - a semaphore object and one or more semaphores may be 
+      created using semget() 
+    - ret = semget(KEY,param2,param3) - param1 is KEY - 
+      as mentioned in shared memory object, a semaphore
+      object is uniquely identified using a KEY value - 
+      param2 decides whether a single semaphore will be
+      managed by a semaphore object or multiple semaphores
+      will be managed by a semaphore object . param 2 
+      can be 1, in which case a single semaphore is 
+      managed by a semaphore object - param2 can be >1, 
+      in which case several semaphores can be managed 
+      using a single semaphore object . 
+      param3 is similar to what we discussed for a shared memory 
+      object - meaning, it passes required flags
+    - normally, a semaphore object will contain a single  
+      semaphore - a unix/linux semaphore object may contain
+      a single semaphore or multiple semaphores . it is 
+      the requirement of the developer that decides whether
+      a single semaphore is needed or multiple semaphores
+      are needed .
+    - if a semget() is successful in creating a new 
+      semaphore object and associated semaphore(s),
+      it will return appropriate semaphore id - this 
+      semaphore id may be used in further system call 
+      APIs . 
+    
+    - after a semaphore object with semaphore(s) is 
+      created, semaphores must be initialized - to 
+      initialize a semaphore in a semaphore object,
+      semctl() is used - semctl(param1,param2,param3,param4) -
+      param1 is the id of the semaphore object - param2 is the index
+      of the semaphore in the semaphore array of the semaphore object-
+      param3 is the command to the semctl() - semctl() has many
+      functionalities - initialization is one of its functionalities-
+      SETVAL command is used to initialize a semaphore using 
+      semctl() - param4 is an union which has several fields - 
+      a field in the union is used depending upon the param3 - 
+      in our case, SETVAL uses val field of the union - val 
+      field of the union decides the initial value of the semaphore
+      that will be initialized by semctl()   
+
+    - once a semaphore is initialized as per our requirements,
+      we can operate on the semaphore using semop() system 
+      call API - semop() system call API can be used for 
+      decrement operation as well as increment operation .
+    
+    - semop(param1,param2,param3) - param1 is the id of the
+      semaphore - param2 is address of an array - elements 
+      of this array are of type struct sembuf { } - param2
+      can point to an array, which contains one or more 
+      struct sembuf { } elements . param3 indicates 
+      the no. of elements in the array pointed to by param2-
+      based on parameters passed to semop(), decrement operation 
+      or increment operation may be done on appropriate semaphore .
+
+    - struct sembuf { } elements are as below :
+
+         - struct sembuf sb[3]; 
+
+         - sb[0].sem_num is filled with the index of a 
+           semaphore in the semaphore object 
+         - sb[0].sem_op is filled with the appropriate
+           operation - +1 for increment operation and
+           -1 for decrement operation 
+         - sb[0].sem_flg is the flags field and typically
+           set to 0 
+     - for an illustration, let us a few examples below:
+        - sb[0].sem_num = 0;
+          sb[0].sem_op  = +1;
+          sb[0].sem_flg = 0; 
+          semop(id1,sb, 1); //what does this semop() do ?
+
+        - sb[0].sem_num = 0;
+          sb[0].sem_op  = -1;
+          sb[0].sem_flg = 0; 
+
+          sb[1].sem_num = 1;
+          sb[1].sem_op  = -1;
+          sb[1].sem_flg = 0; 
+          semop(id1,sb, 2);        
+
+
+       - you may operate on one semaphore at a time, in a semop()
+         API and invoke semop() several times for each operation .
+       - or, you may operate on several semaphores at time, in a 
+         single semop(), without invoking semop() several times .
+       - apart from programming aspects, can you mention some advantage
+         when we use several semaphore operations in one semop() ? 
+           - when you do several operations in one semop(), these
+             operations are handled atomically - meaning, if both
+             operations can be completed, they will be or if either
+             operation cannot be completed, both will not be completed.
+             - meaning, both operations will be successful or none
+               will be successful .
+             - refer to chapter 8 of charles crowley - there is a section
+               on semaphores and dead-locks - in that, there is a section
+               on deadlock prevention and semaphores - you will understand
+               the importance of doing several semaphore operations
+               atomically using a single semop() . 
+             - do read this section and try to figure out the importance
+               of semaphores and their implementation details .
+
+
+
+
+
+
+      - semctl() is a versatile system call supporting different
+        commands - one such is SETALL - to use SETALL, following
+        is the syntax - semctl(id1, 0, SETALL, u1) - in this context,
+        param1 is the id of the semaphore object - param2 is ignored/
+        unused - normally, we set it to 0 - param3 is SETALL - 
+        param4 is the union - in this case of SETALL, array field 
+        of union is used - array field is initialized to point to 
+        an array of unsigned short elements - no of elements in 
+        this array is equal to the no of elements in the 
+        semaphore object . each element is used to fill the 
+        initial value of the corresponding semaphore in the
+        semaphore array maintained in the semaphore object - 
+        if there are 2 elements in the semaphore object, we need
+        an array of 2 unsigned short elements - if we have n 
+         semaphores in a semaphore object, we need n elements 
+        in the array - best way understand these aspects is to 
+        look into a sample code and refer to manual pages .     
+
+
+
+
+11.  if a parent process creates shared memory object and 
+     attaches to it, VADs are created for parent process 
+     with appropriate attributes .
+     - what happens, if a child process is created for 
+       such a parent process ? particularly, 
+       what happens to shared memory related aspects for
+       the child process ?
+          - child gets duplicate VADs and in the case
+            of shared memory VAD, page frames are shared
+            forever - meaning, for reading and writing -
+            this is not the case for other data pages/pageframes
+            , which are treated as per copy-on-write rules .
+      - in this case, parent uses shmget() and shmat() before
+        calling fork() - after fork(), child inherits the shared
+        memory segments of parent - we do not explicitly use
+        shmget() and shmat(), in the child process .
+      - in this case, parent and child processes will see the
+        same set of virtual addresses for shared memory segments .
+
+
+
+12. what happens, if shmget() and shmat() are used in parent 
+    as well as in child process ?
+        - we may use shmget() and shmat() 
+        - or, we may just use shmat(), only - in this case,
+          id is the duplicated id in the child process .
+
+        - in this case, parent and child may or may not
+          see the same set of virtual addresses - this
+          is due to certain implementation reasons in 
+          modern systems .
+
+        - whether parent and child use the same set of 
+          virtual addresses or not, their respective 
+          shared memory VADs will point to the same set
+          of shared memory objects - which means, they will
+          end up sharing the same set of page frames via 
+          the same set of shared page frames array stored
+          in common shared memory objects . 
+
+        - also note that the above case of different virtual addresses
+          will also occur in the case of 2 different,unrelated processes that 
+          are working on the same shared memory region /share memory object 
+          as well - the reasoning is the same - even if 2 unrelated processes
+          are attached to 2 different set of virtual addresses, their 
+          VADs are still pointing to the same shared memory object 
+          and in turn will end up sharing the same set of page frames .  
+
+13. what happens, if shmdt() is invoked in a process ?
+
+       - connection between the current process and the 
+         shm object is destroyed .
+            - shmdt() also destroys the VAD associated
+              with the shared memory region for this 
+              process - in short, any relationship
+              with the shared memory region is destroyed
+              for this process .
+       - if shmdt() is not invoked in a process, it is 
+         invoked by the system, when process terminates .
+       - when shmdt() is invoked, shm object is not destroyed .1
+
+       - shm obj is destroyed, when a process invokes 
+         shmctl() .
+
+       - if a process is still attached to a shm obj and
+         another process invokes shmctl() to destroy the 
+         shm object, system will mark the shm obj for future
+         destruction and when all processess attached to the
+         shm object have detached, actual destruction will 
+         occur .
+
+       - like the above, there are several rules governing 
+         different objects of the operating system and best 
+         way to learn these is as we work .
+
+14. in the case of semaphores, following are the observations:
+
+       - in one of the assignments, initial value of the
+         semaphore is set to 0
+       - child process decrements
+       - parent process increments
+       - in both child and parent, print semaphore values
+         before and after semaphore operations - ideally, 
+         you must have seen that all values are printed
+         as 0s .
+       - in some cases, initial value was set to 8 and tested-
+         in this case, changes were apparent .
+       
+       - in another assignment, 2 semaphores are used as below:
+            - one semaphore is a critical section semaphore 
+                 - initial value is set to 1
+            - another semaphore is a binary semaphore- used
+              as synchronization semaphore .
+                 - initial value is 0 
+
+            - why use synch. semaphore ?
+                 - it ensures that the data is valid for the 
+                   reading process - otherwise, it may dealing
+                   with stale data - you can explore and 
+                   understand more .
+            - in this case, the synchronization semaphore
+              may be incremented beyond the system's limit and
+              after that, any operation is invalid .
+                  - in this context, that is all that is 
+                    .
+                  - in realistic scenarios, we must code 
+                    such that this scenario must not occur -
+                    it is the responsibility of the developer .
+
+  
+       
+       
+
+     
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+ 
+   
+         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+       
