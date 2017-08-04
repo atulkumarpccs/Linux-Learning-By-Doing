@@ -1,0 +1,702 @@
+
+- in most modern operating systems, there are 2 aspects of process
+  memory - one deals with logical / virtual memory and 
+  the other deals with physical memory 
+
+- to understand logical/virtual memory, we need to understand
+  logical address space / virtual adddress space, better !!
+
+      - focus more on address space - logical or virtual as
+                                      needed !!!
+
+
+- in a system that does not support virtual memory, most 
+  of the discussion is around physical memory and at the most 
+  around logical address space !!!
+
+- in a system that supports vm(virtual memory)/vmm(virtual memory 
+  management) , discussion is both on 
+  virtual memory / address space and physical memory !!
+     - in most cases, you will not be dealing with physical addresses,
+       but will be dealing with page frames/physical memory 
+       as a resource !!!!
+     - when you work in system space, you will be dealing with 
+       logical addresses and physical addresses !!!
+
+1. virtual memory management is a set of s/w techniques 
+   used by OS along with h/w mem. management techniques- 
+   hw techniques like page based mm. , exceptions and 
+   many more are used !!!
+
+2. a process is assigned a virtual address space - virtual 
+   address is nothing but transformation of logical address space
+   with the use of virtual memory techniques
+       - depends on the size of the process/application 
+       - depends on no. of sections used in a process !!!
+       - depends on the processor architecture 
+       - logical address is now virtual address
+       - logical page is now virtual page
+       - logical address space is now virtual address space 
+       - transformation is achieved using certain techniques
+         - due to this characteristics of address space
+           of a process are changed !!
+
+3. a process which has virtual address space is  divided into 
+   virtual pages - virtual pages are nothing but transformation 
+   of logical pages with the use of virtual memory techniques 
+
+4. normally when a process is created, apart from pd and its 
+   associated data-structures, entire process(meaning, contents 
+   of the process are loaded into user-space) is loaded into 
+   memory - this is true in the case of a system that does 
+   not implement virtual memory techniques - this is true in the 
+   case of a typical rtos system or eos system !! may not be
+   true in the case of gpos, without certaining tuning !!!
+     - a process allocates and uses certain memory in system space 
+           - pd, other related objects, page tables, system stack 
+             and many more !!
+           - memory allocated in system space for a process
+             is never managed by virtual memory manager - 
+             meaning, this memory is permanently allocated !!!
+     - a process allocates and uses certain memory in user-space 
+           - for code,data, heap , stack , libraries and many more !!
+           - memory allocated for user-space may be managed 
+             using vmm, if OS supports and application can
+             accept it !!!
+Note: the above 2 statements are typically for a system that may 
+      not support actual virtual memory management !!!
+
+5. in a system that implements vm techniques, when a process
+   is created, pd and associated data structures are allocated 
+   , but entire process(user-space contents, in particular) 
+   is not loaded into main memory - only 
+   virtual address space is created and associated VADs(virtual 
+   address space descriptors are created and managed in the 
+   pd) - in addition, as we had discussed during page based 
+   memory maanagement, primary and secondary page tables are
+   created and maintained in the pd - however, page frames 
+   are not allocated - ptes are set to invalid state - meaning, 
+   when a process is created, no physical memory / page frames
+   are allocated !!! meaning, contents of the process are not 
+   loaded into main memory !!!
+            - ptes of secondary page tables are set to 0 
+            - this also means P bit in corresponding ptes
+              is to 0
+            - in this context, p bit is set to 0, but the 
+              interpretation will be different depending 
+              upon the actual context !!! 
+
+
+6. because of the above reasons and further vm techniques, 
+   logical pages are transformed into virtual pages, 
+   logical address space is transformed into virtual 
+   address space and logical addresses are transformed into 
+   virtual addresses
+     - a valid logical page will always have a valid pte
+       - a page frame is always associated - in short, 
+       valid logical page is always loaded in main memory !!!
+     - a valid virtual page may or may not have a valid pte - 
+       meaning, it may or may not be loaded into main memory !!!!
+     - a valid virtual page may not be loaded into main memory
+       when the process is created - during the execution of the
+       process, a valid virtual page  may be loaded into 
+       main memory and subsequently removed from main memory - 
+       some time in the future, it may be again loaded into 
+       main memory !!! this continues !!! this is one of the 
+       basic principles of virtual memory !!!
+
+7. logical address space or virtual address space of a process
+   is constrained by the underlying architecture and operating 
+   system managing the architecture - in a typical 32-bit system,
+   4GiB are the total available logical/virtual address space - 
+   of this 1GiB is typically reserved for system space - meaning,
+   a max. of 1GiB can the memory used by system space - balance 
+   ~3GiB are assigned to every process - depending upon the process
+   size, a part of 3GiB will be used partially - a process can 
+   have a max. size of ~3GiB - in some operating systems, this 
+   no. will differ - say 2GiB may be the max. possible size
+   of a process !!! 
+         
+8. in the above case, every process is provided with 4GiB of 
+   virtual address space - of which, 1GiB is dedicated to the 
+   system space and 3GiB~ dedicated to the user space - when
+   a process context switch occurs, the setup still remains
+   true - meaning, lower 3GiB of the address space will be 
+   used by the process to map user-space virtual pages/page frames-
+   higher 1GiB every process will be used to map system space
+   virtual pages / page frames!! 
+
+9. 1GiB of every process that is dedicated for mapping system 
+   space is used to map to the same set of page frames , which 
+   are holding the kernel's page-frames !! this part is 
+   not controlled by vmm and its techniques !!! 
+         - logical pages of a process used to manage system
+           space/kernel are not transformed into virtual pages
+           - they still retain most of the characteristics
+           of logical address space !!!
+
+10. how independent process address spaces are generated ??
+    - by setting up certain set of secondary page tables
+      to uniquely map to a private set of page-frames 
+      dedicated to the respective process
+    - the above is true for every process and that is how
+      independent virtual address spaces are generated !!!
+
+11. how an unified system address space is generated ??
+    - certain secondary page tables of a process associated with 1GiB of 
+      system space are set up such that their ptes point to 
+      page frames holding kernel / system-space !!!
+    - the above is true for every process - meaning, kernel-space page
+      frames are shared among processes via a set of secondary 
+      page tables !!
+
+12. a process can access its process address space , normally - 
+    a process can access system space via system calls - 
+    every process uses system calls to access the system routines
+    in system-space mapped to their 1GiB part of the address space !!  
+         - to access services of OS
+         - to exchange data between user-space and system space !!!
+     
+
+
+13. let us assume a new process is created in a virtual 
+    memory system - following will be the life-cycle of the 
+    process with respect to memory management :
+    - when the process is created, VADs are created and associated
+      page tables are created - ptes are initialized to invalid state
+    - whena process attempts to allocate dynamic memory, a new VAD
+      may be created and assoicated page tables are created with 
+      ptes initialized to invalid state 
+    - how are the VADs and page tables related ??
+       - based on the translation mechanism for a given VAD and its
+         virtual addresses, one or more secondary page tables 
+         are uniquely associated - in this order, every VAD will 
+         have its own set of secondary page table(s) !! the
+         same argument can be used for ptes as well 
+    - what happens when a process attempts to access a virtual address
+      of a virtual page of the process for the first time ??  
+       - there will be a page fault exception generated due 
+         to an invalid pte 
+       - this will lead to a jump to corresponding page fault 
+         exception handler !!  where is this present ??
+                  - virtual memory subsystem 
+         who maintains it ??
+                  - interrupt table of interrupt subsystem !!
+
+       - the page fault exception handler will retrieve the 
+         faulting virtual address from processor's control
+         register and scan the VADs - this scanning is don e
+         to verify that the faulting virtual address is a
+         valid virtual address of the process - if the virtual address
+         is invalid(unused) , the process is terminated !!
+           - what does this mean ??
+              - invalid / illegal memory access 
+           - why such a problem should occur ??
+              - developers' errors / bugs 
+           - this is one of the non trivial uses of VADs 
+
+       - if the faulting virtual address is a valid virtual 
+         address, the exception handler allocates a new page-frame
+           - exception handler is able to allocate a new page 
+             frame by interacting and requesting the physical 
+             memory manager using appropriate interfaces - this 
+             is a good example for virtual memory manager interacting
+             with physical memory manager !!!
+
+         -the exception handler will also read contents from the 
+          corresponding 
+          program file for reading a code or data page contents - 
+          using the contents the newly allocated page frame is initialized-
+          this will initiate a disk I/O  - disk I/O is expensive 
+          , high latency and non deterministic !!!
+              - memory access is the order of nanoseconds
+              - disk access is in the order of milliseconds 
+       - pte of the corresponding virtual page is initialized to that 
+         of the new page frame , P bit is initialized to 1, access 
+         bits are initialized as mentioned in the VAD , u/s 
+         bit is set to 1 and the process is restarted from the faulting 
+         instruction - meaning, program counter will not be pointing 
+         to next instruction, but the current instruction where
+         the process encountered a page fault exception !!     
+       - as per the above demand paging,a process will continue to 
+         encounter page faults and will be allocated page frames and 
+         restarted after every page-fault - demand paging involves 
+         the following:
+                a page fault
+                a new page frame allocation 
+                may involve disk I/O 
+                restart the process
+            - demand paging is part of virtual memory management  !! 
+       - the above demand paging is also repeated for every process
+         in the system
+
+     - demand paging uses physical page frames, efficiently !!!
+ 
+     - run time latencies of the process execution are increased
+       and non determinism is introduced !!!
+     - from a GPOS perspective, vmm is acceptable and inevitable
+       to manage several processes in the system !!!
+     - from a RTOS system point of view, vmm is not acceptable 
+       and it may be an essential feature for the processes to 
+       be loaded and executed 
+     - depending upon your platform, an os feature may be 
+       inevitable or unacceptable !!! 
+
+       - what will happen if a heap or a stack virtual address 
+         is accessed for the first time by a process ??
+         -most of the above steps for demand paging will be true 
+          in this case as well - for this case, reading contents 
+          of the page from program file will not be done - stack 
+          and heap pages are treated as anonymous pages - meaning, 
+          they do not have contents stored in the program file !!
+            - these page faults do not involve disk I./O - 
+              these are less expensive compared to page faults'
+              involving disk I/O  
+               - page faults involving disk I/O are known 
+                 as major faults 
+               - others are known as minor page faults 
+       - however, since the total physical memory is limited, 
+         system will sooner or later enter low-memory scenario - 
+         meaning, available total physical memory drops below
+         acceptable threshold 
+       - when the available total free memory falls below acceptable
+         threshold, system initiates a page stealing mechanism 
+         via a kernel thread - known as page-daemon - during page-stealing,
+         swap - space is used for saving the contents of stolen page
+         frames from a process !!! 
+
+Note: actually page-stealing is page frame stealing !!!
+
+             - a page-slot in the swap space is used to save the 
+               contents of stolen page-frames and ptes of stolen
+               pageframes are set to invalid in the page tables !!
+             - address of the page slot is also stored in the 
+               pte, but P bit is set to 0 !!!
+             - page frames are stolen from virtual pages of 
+               processes and contents of stolen page frames
+               are saved in allocted page slots !!!
+             - stolen page frames are freed to free list of 
+               physical memory manager !!!
+             - the above process is repeated time and again 
+               to ensure that the total free physical memory 
+               never drops below a threshold !!!
+
+Note: such features are very popular and very common in the case
+      of GPOS systems - may not be acceptable in the case of RTos
+      systems !!
+
+       - normally swap area is a dedicated partition on the hard-disk !!
+         the dedicated swap-area is managed by virtual memory subsystem -
+         swap-area is divided into page size regions known as 
+         page-slots !!!
+       - when page frame is stolen from a process by the page-daemon, 
+         corresponding contents are first stored in a newly allocated
+         page-slot on the swap-area !!
+             - page daemon is a system process - actually, a kernel
+               thread !!!
+             - such kernel threads are woken up periodically by 
+               the operating system as needed !!!
+Note: once again, such implementations are very popular in GPOS and 
+      may not be acceptable in RTOS systems !!!
+
+       - based on the above principles, virtual memory management
+         and mechanisms may work as per the following:
+
+             - total phy mem size
+             - no of processes and their sizes
+             - process attributes
+             - swap area size
+             - kernel parameters
+             - in addition specific implementation details
+               of a given vmm subsystem !!!
+
+       - let us assume that process1 ( with ~1GiB size ) is executed first 
+         on the system and forced to use physical memory - meaning, 
+         page frames !!!page frames are allocated by page fault 
+         exception handler via phy memory manager !!!
+           - 	in our case, we are using example1.c (ex1) as 
+                the example process - this is coded in such 
+                a way that it will block for certain UNIX signals
+                - when certain unix signals are generated, the 
+                process will be woken up !!!
+           - we are using SIGTERM signal to wake up the process - 
+             we will understand more on unix signals during 
+             study of unix processes !!!
+           - if we observe the system's memory usage and process
+             memory usage, process has almost used most of its 
+             process size by loading most of the pages into 
+             main memory - in addition, several page faults are
+             generated - in this case, majority of the page faults
+             are minor - meaning, no disk I/O - such page faults
+             are preferred over major page faults that involve disk I/O  
+
+       - next, we load another process2 (with 1GiB size) is executed 
+         on the system and forced to use physical memory - meaning, 
+         page-frames are allocated by page-fault exception handler via
+         phy memory manager !!! when the physical mem. manager observes
+         that the total physical memory is low, it will trigger the 
+         page-daemon kernel thread !!
+       - page-daemon kernel thread will steal page-frames from processes
+         based on page-stealing algorithm - this algorithm is typically
+         based on LRU (least recently used alogorithm) - based on this, 
+         page frames of first 1GiB process is stolen by page-daemon 
+         and handed over to the physical memory manager - the second
+         process is allocated physical page frames by the page fault 
+         exception handler via phy mem manager - the contents of 
+         stolen page frames are first written into page slots allocated
+         in swap-area - this is the reason why swap-area exits - in fact,
+         it is supposed to provide swap-slots to stolen page frames - this
+         is one of the key techniques of virtual mem. management !!
+       - the above page-stealing and reallocation will continue when 
+         another third process is loaded and forced to use physical 
+         page frames - this continues !!!
+       - for page frames that are stolen from a process and written into 
+         page-slots of the swap-area, corresponding addresses are managed
+         in the respective process, in the respective ptes !!!
+       - when there is a page fault for a stolen page frame, when the
+         corresponding virtual page is accessed, it is the responsibility
+         of the page fault exception handler to read the corresponding 
+         page contents from the appropriate page-slot using its address
+         stored in the corresponding pte        
+       - pte is cleared completely when it is initialized for the 
+         first time - in subsequent cases, pte is non-zero with P=1 or
+         pte is non-zero with P=0 
+               - pte with P=0 and entire field is 0
+                     - what is the state of the virtual page ??
+                         - in this state, virtual page is 
+                           not loaded into main memory and 
+                           not stored in swap area as well 
+                         - there is a special case, where 
+                           a virtual page may be an invalid
+                           virtual page 
+               - pte with P=0 and entire field not equal to 0
+                         - in this case, virtual page is not 
+                           mapped to a page frame, but mapped 
+                           to a page slot in swap area - meaning,
+                           the non zero information is the address
+                           of the corresponding page slot   
+               - pte with P=1 and entire field not equal to 0 
+                         - in this case, virtual page is mapped
+                           to a page frame and contents of the      
+                           virtual page are loaded into main memory !!!
+Note: the above discussion on pte states and corresponding virtual 
+      page states is a very good illustration of virtual memory 
+      management and its tricks !!!
+
+
+       - whenever there is a process context switch, the page - tables
+         are switched and hence, virtual address space of a process 
+         is switched - this is the same as we discussed during 
+         page based memory management - the processor is updated 
+         with base address of primary page table of the in coming 
+         process by the scheduler !!!
+              - TLB cache entries are invalidated - this
+                is an expensive operation - meaning, this 
+                increases overhead on the system and slow down
+                in performance !!
+              - every time there is a process switch, the above
+                is repeated 
+              - this is one of the reasons why process switching 
+                is expensive !!
+Note:  this understanding may help us understand the behaviour
+       of thread in the future discussions !!
+ 
+       - when a process terminates normally or abnormally, 
+         following actions are taken :
+         - the page frames are freed to physical mem. manager  
+         - page slots are freed to swap memory manager !!!
+         - page tables are freed to physical mem. manager
+         - VADs are freed to physical mem. manager
+         - other objects associated with the process and pd 
+           are freed !!  
+
+14. as a summary of the above :
+    - process size can be determined based on program file headers
+      and run-time requirements for stack / heap and other sections !!
+    - based on the above, VADs and associated page-tables are 
+      created !!
+    - estimated set of page-slots may be reserved in the swap- area
+      (this depends on implementation ??)
+           - reservation is not allocation - system records 
+             , process is not allocated - allocation is ,
+             when demanded or needed !!!
+    - swap-area page-slots may be initialized(depends on implementation ??)     - ptes are invalidated !!
+    - base address of the primary page table is recorded in the pd
+    - during process termination, page-slots,page-frames and 
+      page-tables are freed !!
+    - during a process context switch, TLB entries are freed and 
+      primary page table's base address is loaded into the processor
+    - once the process is scheduled, it will start using virtual 
+      addresses and encounter page-faults - following will be the 
+      actions :
+         - same as our discussion on page-fault, above    
+
+
+   - in a 32-bit system, max. phy mem used by a process/application
+     may be 3GiB (approx) - ??  3GiB is the max. virtual addrss
+     space that can be used by any process - that also limits
+     amount of physical memory that can be mapped for the process - 
+     it is 3GiB ???
+          - what is the understanding in this context ???
+                - a process can be of 3GiB max size - meaning,
+                  it can never be larger than this size !!!
+                - due to the above reason, a process can
+                  never use more that 3GiB main memory !!!
+          - due to this, system space size cannot be more
+            than 1GiB - meaning, worst case scenario, 
+            system space can allocate itself a maximum 
+            of 1GiB physical memory 
+          - which means, we can safely reserve 1GiB of 
+            max phy mem for system space and assume the 
+            balance for calculation of vm size !!!
+              - page frames allocated to system space 
+                are not controlled by vmm - meaning, 
+                they do are not subject to page stealing -
+              - in otherwords, page frame allocations for
+                system are strict and page frame allocations
+                for user space are less strict !!! 
+             
+15. based on the above discussions, how do we define virtual 
+    memory ?? meaning, how do we define virtual memory as an 
+    entity ?? what is its size ?? what are rules and restrictions ??
+    - virtual memory = x% of total physical memory + 
+                             swap-space size 
+          - whenever we reserve a certain percentage of 
+            RAM for system space, it means, VMM does not 
+            have control over it and vmm cannot use it 
+            to manage memory for processes - this is the 
+            reason for reservation !!! we must calculate 
+            after proper reservation !!!
+
+
+Note: vm size is a system based quantity - we do not calculate 
+      this on a per process basis - however, we will be able 
+      to interpret vm as a resource for a give process or processes !!!
+
+       - what is a better no. for x based on what we have seen 
+         for a 32-bit system ?? we can conservatively and 
+         safely assume that 1GiB is the max. phys. mem system space 
+         will ever use !! 1GiB is the max. that can be mapped !!!
+       - if the total phy mem size is 2GiB, 1GiB is available
+         for virtual mem calculations !!
+       - if 4.5 GiB is total swap-area , virtual mem = 1 + 4.5 GiB 
+Note: in this case, 1GiB for swap space will be a much better 
+      no and 2 GiB for swap space will also be a decent no - more
+      than that may slow down applications !!!
+    - for example, virtual memory = 1GiB(50% of totalphymem) + 4.5 GiB
+    - 50% is reserved for kernel's memory requirements - kernel 
+      may not use all the 50% - this is a conservative estimate - 
+      depending our system and our estimate, we may choose other 
+      nos - 75 % or 80 %, if it is suitable and is a fact !!
+         - if a developer / admin is well aware of the applications
+           of the system  and also the system space behaviour, 
+           we can reserve a lower amount of phy mem for the 
+           system space !!! instead of 1GiB, we can reserve, 
+           512MiB or 256MiB for system space !!!
+         - in the above case, phy mem available for user space
+           is 1.5GiB at the most - which means, swap area can 
+           be 1.5GiB or 3GiB - which means, our vm size will 
+           be much higher !!!
+
+      - what is a better no. for x based on what we have seen 
+         for a 32-bit system ?? we can conservatively and 
+         safely assume that 1GiB is the max. system space 
+         will ever use !!
+       - if the total phy mem size is 7.8 GiB, 7 GiB is available
+         for virtual mem calculations !!
+       - if 6 GiB  is total swap-area , virtual mem = 7 + 6 GiB = ~13Gib 
+             - on what basis 7Gib is used for virtual mem. calculation ??
+                 - it is the worst case estimate for system space
+                   memory usage !!! if you have better understanding'
+                   of the system, you may estimate better !!! 
+             - on what basis 6 Gib was chosen as swap space 
+                 - it depends certain rules and performance issues !!
+                 - it depends on how large our applications will be
+                   and subject to the above rules !!!
+          
+             - what is the significance of the above no - meaning,
+               13Gib of virtual memory  ??
+                  - in this context, several large applications 
+                    can be active in the system !!!
+                     - what are the differences in the above contexts :
+                         - we can load several large applications!!!
+                           - meaning, several large applications 
+                           sum of whose sizes are larger than total 
+                           physical memory size !!!
+                         - individual processes can be of larger 
+                           size - meaning, larger than phy mem size !!!
+
+                         - in the first configuration, what is the largest
+                           application than can be loaded in the system ??
+                           (available phy mem for vm is 1.5GiB and
+                            swap space is 1.5GiB)
+                             - ~3GiB 
+                         - how many such large applications can be loaded 
+                           into the system ???
+                             - in this case, only one 
+                         - how many 1.5GiB processes can be loaded into 
+                           the system ??
+                             - 2 
+                         - how many 1 GiB applications can be loaded into 
+                           the system ??
+                             - 3 
+                  - in the second configuration, what is the largest
+                           application than can be loaded in the system ??
+                           (available phy mem for vm is 7GiB and
+                            swap space is 6GiB)
+                             - ~3GiB(this is due to the per process 
+                                     limit - meaning, system wide 
+                                     resources limits  are still subject 
+                                     to per process resources limits !!)
+                                            
+                         - how many such large applications can be loaded 
+                           into the system ???
+                             - in this case, 4 
+                         - how many 1.5GiB processes can be loaded into 
+                           the system ??
+                             - ?? 
+                         - how many 1 GiB applications can be loaded into 
+                           the system ??
+                             - ??
+ 
+                  - try to visualize/ quantify the above by disabling 
+                    swap area - what do you observe ??? 
+             - what is the significance of the above no on the system 
+               and on the process !!!
+                  - for a system, several large applications can be loaded !!!
+                  - for a process - it can be active with less no of
+                                    virtual pages loaded into memory !!!
+                                  - as per text book, a process can be
+                                    as large as virtual memory size - 
+                                    meaning, larger than available 
+                                    physical memory !!!1practically,
+                                    this is subject to hw arch. and 
+                                    undelying OS !!!
+              - can you give a system where we can utilize entire 
+                13GiB for a process virtual address space - meaning,
+                we wish to run a large application !!! 
+                   - a 64 bit hw platform with a 64-bit os loaded
+                     on top of it can use it !!!
+
+16. assuming we have quantified virtual memory, what is the consequence
+    of virtual memory on the system and on the processes ?? 
+    - we can load processes that are larger than total phy mem of 
+      the system - subject to the restrictions of max. virtual address
+      space of a process and total virtual mem size - minimum of the
+      2 values are chosen !! meaning, max. size of an application/procss
+      = min(max. VAS of a process,virtual mem. size) - for our case, 
+      it is min(~3GiB, ~5.5GiB) = ~3GiB
+    - if several large processes are loaded in the system, sum of 
+      their virtual address spaces cannot exceed the virtual memory 
+      size of the system - in addition, the previous rule also 
+      applies for each process !! 
+      meaning, VAS1+VAS2+...+VASn <= virtual mem. size 
+    - if the above rules are broken, one or more of the following may 
+      occur:
+             - slow down of processes and system as a whole
+             - too many page-faults and high frequency of 
+               page-faults - many of these  page faults 
+               may be major page faults - meaning, disk I/O 
+               transactions will be unacceptable 
+             - if the load conditions and page-faults are extreme,
+               one or more processes may be forcibly terminated by 
+               the system !! - this condition occurs when memory 
+               is very low and swap-area is exhausted - nothing
+               can be done by the system and hence, termination 
+               of large processes may occur  !!! this state 
+               is known as thrashing state of the process !!
+                - we have exactly seen this in the class demo !!!
+    - if a system does not use swap-area, but still uses virtual 
+      memory mm., what will be the consequences ??
+      - virtual memm size is cut down - processes have to 
+        live with minimal vm resources !! 
+      - demand paging is allowed, page-stealing using page-slots
+        is disallowed !!
+
+    - if a system does not use swap-area and also does not use 
+      other virtual mem mm. techniques, what will be the consequence ??
+      - if a process is loaded, it must be immediately allocated
+        page-frames !! no demand-paging is allowed !! and no 
+        page stealing is allowed !!!
+       
+      
+
+    - if we need to enforce strict virtual memory rules, 
+      we need to set certain parameters in the system !!!
+
+       - there are a set of parameters as below:
+             /proc/sys/vm/overcommit_memory - 
+                - if this value is set 2, strict restrictions 
+                  are implemented - in this context, if several 
+                  large processes are loaded into the system 
+                  and they are too large to be accomodated in the
+                  vm resources, system will not allow you create 
+                  processes that exceed the vm resources in the system !!
+                - for other values, such strict restrictions 
+                  are not implemented !!! 
+ 
+
+             /proc/sys/vm/overcommit_ratio - this can be 
+             set to 50 or 75 as per requirement - see the
+             dicussion above - this parameter decides the
+             percentage of phy mem that can be used for 
+             vm !!!
+
+Note: if you wish to know more, read the system documentation !!!
+
+    - by default, system does not enforce all the virtual 
+      memory rules !!
+
+
+
+
+
+17. can 2 processes share page-frames and if so, what are
+    the conditions under which they share page-frames ??
+  
+     - normally, processes do not share their page-frames - 
+       meaning, they have their own, independent page tables 
+       and the page-tables use independent page frames to 
+       map their process virtual pages !!! in fact, this is th e
+       reason why processes are said to be isolated from each other
+       and it is also said that processes are safe entities to 
+       manage independent applications !!
+
+     - processes share their code pageframes, when 2 or more processes
+       are executing different instances of an application / program !!
+     - processes share their code pageframes of shared - libraries !!
+     - processes share their system / kernel code page frames 
+       using certain dedicated secondary page-tables !!
+     - processes may share data page frames using certain special 
+       system calls, explicitly !! this will seen more during 
+       IPC discussion and practicals !!!
+
+     - in all the above cases, sharing is achieved by using 
+       the same page-frame base addresses in different page-tables
+       of different processes - system takes care this set -up 
+       im many cases, implicitly and in certain cases, it must 
+       requested, explicitly !!1      
+      
+18. if system does not have sufficient phy. mem and process
+    is requesting for more physical memory, will the system 
+    allocate memory from swap-area ???
+           - whenever there is request for memory, system 
+    allocates virtual addresses/virtual memory from 
+    total virtual memory size - this is actually done 
+    as below :
+         - a new set of virtual addresses are allocated 
+           in th eprocess address space
+         - equivalent amount of virtual memory is reserved
+           in system's virtual memory size !!! 
+
+
+
+
+
+
+
+
+
+
+
+  
