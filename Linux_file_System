@@ -1,0 +1,546 @@
+1. - in Linux, following is a list of fs :
+            - ext2 fs 
+            - ext3 fs
+            - ext4 fs
+            - xfs
+            - vfat 
+            - reisefs 
+
+2. file system managers - these are the subsystems in the operating
+   system kernel that really manage active file systems and active
+   files. meaning, active filesystems are filesystems that can 
+   be accessed - basically, they are in use - active files are 
+   files that can be accessed and in use .contrast this with 
+   passive file systems and passive files . these are resident 
+   on the disk, but cannot be accessed and manipulated .
+  
+3.  
+    - if there are several file system layouts active in a 
+      computing system, operating system kernel must support
+      as many different file system managers
+    - of course, there will be a logical file system manager
+      in the system managing all the file system managers(physical)
+      and active file system layouts. 
+
+4.	 physical file system
+		- boot block - 2 sectors are reserved and not used
+                              by the file system, but accounted
+                              as part of the file system 
+			      - 1024 bytes
+
+               - file system descriptor/ super block -2 sectors
+                 allocated to manage this in the file system and 
+                 file system descriptor
+                 is the meta data that manages file system related
+                 information 
+                    - 1024 bytes
+                    - no of file system blocks
+                    - no of free file system blocks
+                    - no of free files
+                    - no of used files 
+                    - file system block size
+                    - other meta data related information 
+
+               - file descriptors table contain several file descriptors
+                 - each file descriptor manages meta data for a specific
+                 file . these descriptors are of fixed size - say,
+                 128 bytes or 256 bytes -
+ 
+               - after these meta data sectors, a file system contains
+                 several sectors used for storing file data/real user/
+                 application.
+
+		- using dumpe2fs or debugfs, you can understand the layout
+                 of a modern day Linux file system 
+              
+               - based on using dumpe2fs on /dev/sda11 of  a test system,
+                 we managed to map the layout and describe meta data 
+                 blocks and data blocks - the file system used in this
+                 case is ext2 type - this can be done on any other file
+                 system of Linux 
+
+		- one important caution - do not use these tools on 
+                 active file systems and file systems contains sensitive
+                 data
+
+5. logical file system
+
+	- a file is maintained by the file system using 
+          a meta data - typically this meta data is of fixed
+          size and may contain additional, dynamic meta data
+        - such meta data entities used
+          to manage files are known as inodes (index nodes) - 
+          these are the same as file descriptors
+        - a typical inode is of size 128 or 256 bytes with 
+          additional meta data assoicated as needed
+        - inode information can be divided into 2 parts - 
+          one part contains attributes of the file ./ inode
+        - another part contains addresses of data blocks
+          of the file that contain the real data of the file 
+        - attributes may contain the following:
+
+               - size
+               - credentials(certain ids)
+               - access permissions
+               - no. of blocks
+               - link count
+               - file type 
+        
+        - each inode is assigned an unique no. > 0  
+         
+        - system uses inodes and inode nos to access and 
+          manage files - interfaces use names - typically, 
+          system call APIs and utilities use names.
+
+        - how does the system map a given filename to inode no.
+           - special tables are managed by the file system 
+             to maintain file names to inode nos in the system 
+           - these tables are used to maintain a logical 
+             hierarchy on behalf of the user / application 
+           - in addition, there are several special files
+             created in the system to maintain specific 
+             set of directory tables 
+           - the best way to start is with the first file of the
+             file system that is exposed to the user/application/
+             system.
+           - can you spot the first file of the file system in 
+             a Unix/Linux system ?
+                - inode no. 2 is hard coded in a unix/linux 
+                  system to be treated as the first file 
+                  of the file system 
+                - in addition, this file has the name / (
+                  this is known as root, but name is /)
+                - this file is not treated as a regular file-
+                  this file is treated as a directory file.
+                - meaning, every inode has a file type field and
+                  this is set to directory type.
+                - such a directory file is allocated an inode 
+                  and one or more data blocks.
+                - data blocks are supposed to maintain directory 
+                  entries, not user/application data. 
+                - a directory entry contains the following info:
+                      - name of the file (it can be of any type)
+                      - inode no of the file
+                      - file type 
+                      - name length 
+
+         /root/os_linux/day10_11/filesystem_class1.txt 
+Note: try to visualize how this file is stored in the file system 
+      with the help of directories, inodes and other meta data.
+      - in addition, try to visualize how a file system manager 
+        will access inodes, directory tables and data blocks, 
+        as needed from the file system layout.
+      - it is assumed that the current 
+        file belongs to an active filesystem
+               
+                   - load corresponding file system block 
+                     containing directory entries .the 
+                     file system blocks are loaded into  
+                     system space cache - such a cache is 
+                     known as file system cache.
+
+                   - there will be one directory entry describing
+                     "root" directory file in this directory .
+                   - using that we can get the inode no.of the
+                     "root" directory file
+                   - "root" directory file will have an associated
+                     inode no, inode and a set of data blocks
+                   - in these data blocks, there will be directory 
+                     entries
+                   - the above is accomplished using the same techniques
+                     described for inode no. 2 .
+                   - one such entry will be maintained for "os_linux"
+                   - corresponding to "os_linux", there will be an 
+                     inode and data blocks - data blocks will contain
+                     directory entries  - one such directory entry 
+                     is "day10_11" - this continues and 
+                     eventually, a regular file is encountered - 
+                     this will also have a directory entry in the
+                     data block of the corresponding directory file.
+                   - using the inode no. and inode of the regular file,
+                     data blocks of the regular file can be accessed 
+                  
+Note: every file system is identified using a device no. or 
+      device id. - this information is maintained in the 
+      run-time meta data of the file system, when the
+      file system is active - this is closely tied to 
+      I/O subsystem, but not used by the file system layout.
+
+6. whenever a file is accessed, an active file instance of the file 
+    is created in the system space - in most of these cases, a
+    process is involved.
+
+      - to create an active file, a system call API is needed 
+	- in Linux system,such an API is known as open() system call API .
+
+      - fd = open("/root/os_linux/file1", O_RDWR);
+                     - complete pathname translation and 
+                       get access to an inode copy, in memory -
+                       such an inode copy is known as in memory 
+                       inode.
+		where fd will contain an index into the open 
+                file descriptor table of the current process
+ 
+         ret = read(fd, buffer, n); 
+
+             where, fd is the index that was obtained in the
+             previous step - buffer is the ptr to the user-space
+             buffer and n is the no. of bytes that we are interested
+             in reading from system space 
+
+             - in this read() system call API, we are interested in 
+               reading n bytes from the file and copy the same 
+               into the user space area pointed by buffer.
+             - in this context, ret returns error or a +ve
+               number - when +ve number is returned, it is the
+               number of bytes successfully copied into user-space 
+               buffer - there is also a special return value - 
+               this is 0 - when does this occur ?? this is the
+                 condition that signifies end of file data - that 
+                 is no more data is stored in the file.
+               - there is also a possibility of ret value to 
+                 be +ve and less than n - when does this occur ??
+                  - available amount of data in the file is
+                    less than requested amount of data.
+            - when we are reading data from a regular file, all 
+              data is represented with respect to logical bytes. 
+              it is the responsibility
+              of logical file system and physical file system 
+              manager to translate logical bytes requests to 
+              logical blocks request and pass it to the low 
+              level I/O subsystems.
+         
+           - for a given active file, when a process is reading 
+             or writing, system must remember the no. of logical
+             bytes read by the process with respect to a given 
+             active file - how is this done ? meaning, if a 
+             process has read 2000 bytes from an active file,
+             how does the system remember that it must read from 
+             2000th byte for the next read system call API ?  
+                - there is a location in the open file table
+                  entry corresponding to every active file of
+                  a process.
+                  - this offset field represents file byte no 
+                    currently being accessed via this active file -
+                    this file byte no is initially set to 0, when 
+                    an active file is set up using open() system 
+                    call API.
+                  - this is updated following any read/write system 
+                    call API and also used during subsequent 
+                    read/write system call APIs.  
+                  - internally, system calls such as read()
+                    use this file byte no and pass it certain 
+                    system APIs.
+           - in addition, file system/file system managers 
+             deal with blocks of data, not bytes of data - 
+             however, system call APIs and other library APIs
+             access files with byte units - it is the responsibility
+             of file system managers to  translate byte units to 
+             block units for access - this is done using the 
+             file byte no of interest of the file system block size -
+             file system block size is also store inside the 
+              in memory inode, when a file is activated - actually, 
+             this information is retrieved from file system meta 
+             data managed for the current active file system.
+
+           - how does the read system call API know that 
+             for the current file, end of file data is reached -
+             meaning, all the data of the file has been read ?
+                  - in a typical unix/linux file system,
+                    there is no special characters allowed 
+                    by the operating system - meaning, there 
+                    are no special characters stored at the beginning
+                    of a regular file or end of a regular file.
+     
+                  - each on disk and in memory inode contains
+                    a size field - this holds the total size
+                    of data stored in the file in bytes.
+                  - given the size field in the in-memory inode
+                    and the file byte offset field of the open
+                    file table entry, system can easily conclude
+                    end of file scenarios and how many more bytes
+                    may be read from the active file.
+
+             - every regular file /inode contains credentials 
+               and permissions - you can get this info using 
+               stat utility or ls utility - you can also get 
+               this info using stat() system call API or lstat()
+               system call API .
+                - credentials typically include user id and
+                  group id 
+
+                - permissions are set of bits which have specific
+                  meanings in terms of permissions for certain
+                  credentials of  the current process that 
+                  is using an active file instance of the given 
+                  file/inode .
+                - using ls or stat, extract specific credentials
+                  and permissions of regular files and try to 
+                  match and map them .
+
+                - every file has 3 permission bits for 3 sets -
+                  first set is used to provide permissions to 
+                  processes that execute with euid(uid) set to
+                  that of the uid of the regular file - second
+                  set of permissions is used to provide permissions
+                  to processes that execute with egid(gid) set to
+                  that of the regular file - meaning, the corresponding
+                  credentials of  a given process and the active file
+                  are matching - accordingly, permission bits are
+                  used and interpreted - of course, for all processes
+                  whose euid as well as egid do not match with 
+                  any of the credentials of a file, will be provided
+                  access permissions based on the last 3 bits .
+
+                - based on the above, try to interpret the credentials
+                  of processes and files with respect to permissions .
+                    
+                - if a process wishes to access a file, it must 
+                  be able to match its credentials with the credentials
+                  of all directories in the hierarchy of the file's
+                  pathname and satisfy appropriate access permissions .
+                  if so, process will allowed to match its credentials
+                  with the credentials of the actual file/regular 
+                  file and further active file setup will be completed -
+                  if at any directory, credentials do not match or
+                  appropriate permissions are not granted, active file
+                  setup will be aborted .
+
+                - consider the permissions of directories
+                  in the path name of a file - if all permissions
+                  are satisfied, a process may be allowed to create
+                  an active file instance of a given file with 
+                  appropriate access permissions mentioned via
+                  flags in the open() system call API - 
+                    - for instance, if a process uses O_RDWR 
+                      in access request flags of the open()
+                      system call API, what does it mean ??
+                         - process wishes to use read() and
+                           write() system calls on the specific 
+                           file, if permissions are granted .
+                         - to find the other possible permission 
+                           request flags, refer to man 2 open()
+                      
+		      how will the system do the validation 
+                      of requested permissions and allowed 
+                      permissions ??
+                          - credentials of process and active
+                            file are matched - based on the matched
+                            credentials, corresponding permissions
+                            are extracted and matched against the
+                            requested permissions - if the requested
+                            permissions are allowed, requested 
+                            access permission are 
+                            granted - active file is created and 
+                            open file descriptor table index is 
+                            returned to open() system call API . 
+
+                      what will be the consequence if requested
+                      permissions are granted by the open() system
+                      call API ?
+                          -active file is created - requested 
+                           permissions are granted and these
+                           requested permissions are stored in 
+                           another field of the open file table 
+                           entry corresponding to this active file .
+                          - these stored permissions are subsequently
+                            checked by read() and write() system 
+                            call APIS .
+
+
+                      what will be the consequence if the requested
+                      permissions are not granted by the open()
+                      system call API ?
+                         - open() will return error . 
+
+              - active files are maintained via open file descriptor 
+                table  
+              - when a fork() system call API is invoked, child process
+                is given a duplicate open file descriptor table - 
+                what is the consequence of this duplication on 
+                active  files currently managed by the parent process ?
+                 - since children processes inherit credentials of the 
+                   parent process, permissions are not an issue - focus
+                   more on the active files and how they may be inherited
+                   by children processes .
+                 - active files of the parent process are also inherited
+                   by the child process, but must be used judiciously - 
+                   meaning, if parent writes and child also attempts to 
+                   write, they may see the same logical byte offset 
+                   as they share the same open file table entry - 
+                   such peculiarities are very common in unix/linux 
+                   mechanisms - if you can understand and use them 
+                   appropriately, there should not be any problem .  
+                -  if an active file cannot be shared between the 
+                   parent and child, parent or child may use 
+                   close(index) system call API to destroy the
+                   active file maintained in the parent or child, not
+                   both .
+                - refer to the diagram used for pipe IPC discussion,
+                  below .        
+              - after an execl()/ or related system call API, 
+                open file descriptor continues to be the same -
+                developer may use the existing open files or 
+                use a new set of open files as needed 
+              - in most of the above cases, developer can control
+                certain behaviour with special flags and other
+                techniques - explore system call APIs of 
+                files for more details 
+              - close() system call 
+              - dup() system call
+
+7. links and their uses in a unix/linux system :
+
+     - there are 2 types of links in unix/linux - hard links
+       and soft links (symbolic links)
+
+     - hard link to be understood first :
+        - to understand a hard link, you must understand the 
+          what is a hard link - it is nothing but a directory 
+          entry of a file - meaning, mapping between a filename 
+          and corresponding inode no. - in this context, file 
+          is really represented inode no. and corresponding 
+          inode 
+ 
+        - for a given inode no, unix/linux allows more than 
+          one directory entry - each such directory entry   
+          is known as a hard link of the file - this is 
+          useful for convenience of naming ..
+        - in short, each hard link of a file, represents the 
+          same file, but with a different name - such naming
+          conventions are popular and useful in unix/linux 
+          systems .
+        - one such example is . file in every directory 
+        - one more example is .. file in every directory 
+ 
+        - if a file has several hard links associated with 
+          the file, there will be +ve (>1) link count 
+          maintained in the inode of the file - otherwise, 
+          it will be just 1 - a file must have one hard link.
+
+        - you are free to create hard links for a file using 
+          ln utility or link() system call API - as more hard links
+          are created, link count is incremented - when each hard link 
+          is deleted, link count is deceremented and eventually, 
+          inode and data blocks are freed - this is when we say that 
+          a file is deleted .  
+                      
+        - look into the man pages of ln and link() for usage .
+
+        - however, hard links are only allowed within a given 
+          file system layout instance of a unix file system type -
+          meaning, you cannot span hard links(directory entries)
+          across file system layout instances - this is not allowed .
+          find why ?
+                  - explore the layout of a file system and 
+                    how it manages inode tables and directory 
+                    entries 
+ 
+                  - also try to activate 2 file system layout instances
+                    using mount command - try to create hard links
+                    for a file in a given file system layout instance
+                    on  another file system layout instance - ofcourse,
+                    both must be of linux/unix file system types - 
+                    you cannot implement these across file systems
+                    of windows operating system .
+          
+         - soft links are explained as below:
+
+                  - in the case of a softlink, a new inode is created
+                    and inode does not contain normal data - inode is 
+                    is forced to store pathname of a target file .
+                  - best way to understand a symbolic link or a soft 
+                    link is to create one using ln and list is using 
+                    stat or ls commands .
+                  - for example, let us see a few standard soft links
+                    in our system :
+
+                      which gcc and also list the file's pathname using ls 
+
+                      which cc               ""
+      
+                      which bash             ""
+ 
+                      which sh               ""
+
+                  - symbolic links have the same usage and utility
+                    of hard links - but, they are more flexible -
+                    they can be created for regular file and 
+                    directory files - they can be created across
+                    unix/linux file systems - due to these reasons
+                    , they are more popular than hard links - particularly, 
+                    they are useful when it comes to directories, 
+                    where softlinks can save a lot of space and 
+                    provide convenience .
+
+
+
+
+
+
+
+
+
+ 
+    
+
+         
+
+
+
+
+
+                     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+             
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+                                                                     
+
+
+
+
+
+
+
+
+
+
+                                                                             
