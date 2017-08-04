@@ -14,4 +14,4 @@ In depth DSSD class notes for Linux
 
 ### Who do I talk to? ###
 
-* Atul Kumar<atulkumarpccs@gmail.com>
+* Atul Kumar   <atulkumarpccs@gmail.com>
