@@ -1,0 +1,331 @@
+1. core of the operating system is typically known as kernel 
+
+2. kernel is made of several core components of an operating system 
+
+3. kernel typically resides in kernel space of the system
+
+4. non-core components of an OS are typically located in 
+   user-space system - in addition, applications also 
+   reside in user-space of the system !!
+
+5. kernel is made of several components - some of the important components
+   are listed below:
+    - hardware abstraction layer(HAL)
+    - device drivers 
+    - process manager
+    - physical memory manager
+    - virtual memory manager
+    - scheduler(s)
+    - ipc manager
+    - interrupt manager
+    - logical file manager
+    - different file system managers
+    - time management subsystem 
+    - I/O management subsystems 
+    - and other long list of specific components
+
+
+6. what is the role of HAL ??
+    - this is the component that is responsible for architecture 
+      specific features of a hardware platform of a computing system 
+    - in fact, any other component of the operating system must 
+      go thru. HAL to interact with any part of h/w platform !!!
+    - if an OS is implemented on different h/w platforms, HAL 
+      is different in each case - in short, OS is built with 
+      a different HAL for a different h/w platform !!1  
+    - this layer of the OS is written and implemented using 
+      architecture specific machine instructions - meaning, 
+      this layer is written using low-level language, not 
+      high-level language, typically !!!
+
+7. device drivers are part of the kernel/kernel-space that 
+   typically enable operating system and applications to 
+   access peripheral devices !!!
+
+8. apart from HAL and device drivers, there are several other
+   components - many of them can be spotted in the previous
+   points, above 
+
+9. in addition, there is one special layer/component in the
+   kernel known as system call interface layer - this layer
+   along with system libraries is responsible for implementing
+   and accessing system call(s) of the kernel / operating system 
+   - it is via system call(s) that core services of any 
+   operating system are made available to user-space/ applications
+
+10.memory regions containing kernel components are together known
+   as kernel - space - do not assume that a contiguous physical 
+   memory region is assigned to kernel - space - several 
+   non-contiguous memory regions may be logically put together
+   to form the kernel space !!! a special attribute may be
+   enabled for the memory regions associated with kernel space
+
+11.memory regions containing non core components of the operating
+   system and applications are together known as user-space !!!
+   - do not assume that a contiguous physical memory region
+   is assigned to users-space - several non contiguous regions
+   may put together - a special attribute may not be set for 
+   the memory regions associated with user-space !!!
+
+12.since the core services of operating system are exported 
+   via system calls/system call APIs, user-space components/applications
+   can access kernel services only via system calls/system callAPIs - 
+   if user-space components/applications attempt to access 
+   core services of the operating system by bypassing system call 
+   APIs, processor will generate an exception - invariably, this
+   exception will terminate the user-space process that attempted
+   direct access of kernel services !!!
+         - typically system call APIs are provided via 
+           system libraries 
+         - system call APIs may be used by other libraries
+           , applications and utilities, as needed !!!
+
+         - can we say that all the core services are exported
+           via system call APIs ??? No - not all services
+           are exported via system callAPIs
+
+         - can you name one or more services offered by the
+           operating system, but not available via system call
+           APIs ???
+             - there are certain services exported by the 
+               operating system via system APIs, which are
+               available for access only by system space
+               components - these are not available to 
+               use space components !!!
+
+
+13. in the above case, why should the processor generate an 
+    exception ???  
+    - in most modern operating systems, processors used are
+      sophisticated - meaning, processors support a priviliged
+      mode of operation and less priviliged mode of operation- 
+      in the priviliged mode of operation, a processor can 
+      access entire set of memory regions in the system - 
+      meaning, user-space and system-space 
+
+    - when a processor is working is less priviliged mode
+      of operation, a processor can access only part of
+      the entire set of memory regions - meaning, user-space
+      part only !!!   
+ 
+    - it is partly the responsibilty of operating system 
+      to force the processor to work in priviliged mode, 
+      when kernel components are executing on the processor 
+
+    - it is partly the responsibility of operating system 
+      to force the processor to execute in less priviliged
+      mode when user-space components and applications are
+      executing on the processor !!!
+ 
+    - kernel space components have unlimited access/priviliges
+      to h/w components subject to the rules of the operating
+      system 
+
+    - user-space components/applications must access h.w. resources
+      only via core services - subject to the rules of operating 
+      system !!!
+
+14. system call APIs and system call system routines !!!
+
+    - what is so special about system call APIs, compared to 
+      other APIs ??
+        - system call APIs are implemented using 
+          special machine instructions - we discuss more
+          about these machine instructions, when we 
+          discuss about interrupts and also during 
+          system call assignment !!!
+
+    - user-space components and applications may access h.w.
+      components and other core services via system call APIs - 
+      how is this implemented ??
+             - refer to os_intro11.txt and also certain 
+               sample code used during system call assignments !!
+
+    - what is a system call system routine ?? 
+      - different components provide different services and 
+        may be responsible for providing one or more 
+        system call services as well - although system call
+        APIs are implemented in user-space system libraries, 
+        system call system routines are actually implemented
+        in different components of the kernel space - there
+        is a one to one mapping between user-space system 
+        call APIs and system space system call routines !!
+      - the actual work is done in the system call system 
+        routines, system call APIs are mainly helpful  
+        in invoking the appropriate system call system routine!!!
+      - to get a complete picture of system call APIs, one needs
+        to understand the working of interrupts - interrupt mechanism
+        is also used to implement system calls 
+
+      - how many system call APIs/system call system routines
+        may exist in the system ??
+        - may be 100s of such APIs - the exact no. varies
+          from operating system to operating system - also
+          depends on version of an operating system !!!  
+    
+      - what are their typical uses ???  meaning, what the 
+        services offered via system call APIs - this is the 
+        meaning of exporting core services via system call APIs !!            
+        - process creation, process termination, thread creation/
+          termination, I/O access, memory allocation/deallocation,
+          synchronization, data-exchange, tuning scheduler
+          parameters, file I/O access , network I/O and many more !!!  
+
+        - many operating system parameters may need system call APIs!!!
+
+15. h.w interrupt mechanism - this is highly h/w dependent and
+    also architecture dependent - still, we will try to understand
+    for our purpose by ignoring certain details of h/w - we 
+    will see further details when we look into certain 
+    pseudo code implementation of operating system components !!
+
+    - whenever a h.w interrupt signal is generated, the following 
+      sequence of actions are taken by the processor and 
+      followed by operating sytem actions :
+       - typically peripheral hw controllers or hw timer controller
+         generate hw interrupts directed to the processor 
+       - processor responds by taking one or more actions 
+       - processor may save certain critical registers' state-
+         current information of registers - on stack memory 
+         - we will see more details later !!
+       - processor may switch its current privilige mode of 
+         operation - say, less priviliged mode of operation
+         to priviliged mode of operation - when there is an 
+         interrupt event, processor's control register
+         responsible for privilige setting will be modified
+         , implicitly !!!
+       - processor may jump to a predefined routine in 
+         system space - such a routine is known as interrupt 
+         handler - several interrupt handlers for managing 
+         several hw interrupts are managed in the system's
+         interrupt table !!! 
+       - typically, base address of the interrupt table is 
+         maintained in a control register of the processor - 
+         it is the responsibility of the operating system to 
+         initialize the processor's control registers such 
+         that processor is enable to handle hw events 
+         consistently !!! OS must also be responsible for
+         initializing the interrupt table !!!
+          - interrupt table is part of interrupt manager,
+            in system space !!!
+          - where are the interrupt handlers located ??
+              -located in system - space - which components
+               /subsystems contain interrupt handlers !!!
+                  - I/O subsystems and device drivers !!!
+  
+      - once interrupt handling is completed by the respective
+        interrupt handler, following actions may be taken - 
+        currently, interrupt handler is treated as a single 
+        routine - in reality, it may be a chain of routines - 
+        we will understand more of it later !!1
+        - once interrupt handling is completed, a special 
+          machine instruction is executed 
+        - this instruction typically does the reverse of 
+          what interrupt signal initiated - meaning, 
+          processor's privilige mode is restored to 
+          less priviliged mode - original context/state of 
+          processor's  registers are restored - processor
+          is forced to jump back to user-space instruction 
+          in the interrupted process !!!
+        
+        - 3 parts in interrupt handling 
+              - first part is actions, when an interrupt signal 
+                is generated 
+              - executing ISR/interrupt handler
+              - return from interrupt handling using 
+                special machine instruction !!!
+
+
+       - hw interrupts typically do the following :
+
+         - whenever there is a h/w interrupt, corresponding 
+           interrupt handler is invoked/serviced
+         - interrupt handler may do the following:
+            - service a h/w peripheral controller
+            - service a kernel subsystem  - one such 
+              subsystem is scheduler - another such subsystem
+              is networking and many more !!!
+            - indirectly service an application which 
+              is dependent on a h/w peripheral controller or
+              a kernel subsystem !!!
+
+16. kernel components are typically passive entities loaded in 
+    system space and exist through the life of the system - 
+    a component or a routine in a component is invoked, when 
+    user-space invokes a system call API or a h/w interrupt is
+    generated and action is taken - this implies that kernel components 
+    are not processes or threads, typically - they execute as part
+    of interrupt handling or as an extension to user-space processes !!!
+    - however, there may be exceptions - we will see such cases, in 
+    appropriate contexts !!!
+       - why should user-space applications/components invke
+         system call APIs ???
+              - file I/O 
+              - network I/O
+              - application launching
+              - memory allocation 
+              - access USB modem
+              - creating a file system on a disk partition !!!    
+              - it may be directly or indirectly !!!most 
+                core services are offered via system call APIs
+                - you may use them directly or indirectly via 
+                  libraries or indirectly via  utilities - 
+                  libraries and utilities may end up calling 
+                  system call APIs 
+       - what happens, if system call APIs are invoked ??? 
+
+17. as mentioned above, system calls are implemented using 
+    interrupt mechanism - a specific machine instruction of 
+    the processor is used to generate an interrupt - a specific
+    entry in the  interrupt  table is reserved for corresponding 
+    system call interrupt handler - every system call API uses
+    the same specific machine instruction - the end result is 
+    a special jump to the same system call interrupt handler -
+    in addition, following actions are also taken :
+       - each system call API uses a different set of parameters
+         and these parameters are passed to system space via 
+         processor registers 
+
+       - one such parameter defines the identity of a system 
+         call API - this parameter is known as system call no. 
+        
+       - system call interrupt handler is programmed such that 
+         it interprets the system call no. and invokes appropriate
+         system call system routine !!       
+
+       - each system call API is associated with a specific
+         system call system routine - system call interrupt handler
+         invokes the appropriate system call system routine 
+         with the help of system call no. - system call table
+         maintains system call routine addresses !!!
+  
+       - where are the system call routines actually located 
+         , in system space ??? several hundreds of system call
+         routines are located in various different subsystems
+         and their components !!!
+  
+       - once a system call system routine is executed, it will 
+         return to the system call interrupt handler, which 
+         uses a special machine instruction to jump back to the
+         process and resume its execution in user-space !!! 
+  
+       - during the first jump from user-space to system-space 
+         and return jump to user-space, most steps are same 
+         as in the case of a h/w interrupt handling !!!  
+
+       - many of the parameters are passed to system call system 
+         routine - based on the parameters, system call system 
+         routine will do appropriate service or resource allocation 
+         
+       - various system call system routines, are implemented
+         in different subsystems of the kernel space !!!
+
+
+18. one of the common h/w interrupt sources is timer h/w controller- 
+    in most systems, this controller is programmed to generate 
+    h/w interrupts, periodically !!! these h/w interrupts invoke
+    timer interrupt handler - timer interrupt handler is tightly 
+    coupled with cpu scheduler of the system - invariably, 
+    time-sharing/time-slicing based scheduling require timer
+    interrupt handler's service !!! timer interrupt handler is also
+    used to service other subsystems of the kernel !!!
