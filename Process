@@ -1,0 +1,705 @@
+1. any operating system uses an entity known as process to 
+   manage an active applicatiion/program - an active instance
+   of an application is a process, in an operating system !!!
+
+2. in a multitasking system, there can be several processes 
+   existing in the system
+    - how are the different processes in the system maintained ??
+      - process control block or process descriptor 
+        is the name given to objects used to manage 
+        processes in the system - there is one process 
+        descriptor per process - each process also 
+        has an assigned, unique process id maintained in 
+        the process descriptor !!!
+    - process manager subsystem is responsible for 
+      managing processes in the system !!!
+       - process manager maintains process descriptors
+         in a process descriptor table or process descriptor
+         list 
+
+ 
+
+3. a process may be understood from user-space/application 
+   perspective or system - space / kernel perspective !!!
+
+4. let us first have a look at user-space perspective - 
+   following is a set of details:
+    - there is a process layout in user-space address-space
+      of the process !!
+    - user-space address space of the process is made up 
+      of logical addresses or virtual addresses !! 
+    - is this real ?? if so, what is the reality and 
+      who manages is this reality ??
+    - address-space of a process is further divided into 
+      different parts - one part manages code, another 
+      part manages data, yet another part manages stack and
+      so on - these parts are known as sections/segments
+      of an active application !!1 
+
+5. let us understand processes from kernel / system space
+   perspective - to do so, we need to understand the information 
+   maintained in a process descriptor - process descriptor
+   maintains a lot of information - some are static and 
+   some are dynamic :
+
+   - a newly created process is added to ready state - meaning,
+     state is changed to ready and pd is added to ready queue
+     of the system - ready queue is where are proceses that 
+     are ready to execute are maintained - meaning, these
+     processes have been allocated all other resources, but 
+     the processor - scheduler scans ready queue, whenever it 
+     needs to select a new process to be allocated the processor !!!   
+        - how is the scheduler scheduled ?? who schedules 
+          the scheduler ?? how is it executed ??
+        - cpu scheduler is not a process !!!
+        - scheduler may get invoked due to certain events in the 
+          system - one such event is a process termination - another such event is hw interrupt - there are many other events
+due to which scheduler may be invoked - it is a component of the operating system kernel and it is made up of several routines - one or more of which will be invoked during scheduling activities !!!
+
+
+   - if a process is selected by the scheduler to be executed on
+     the processor, its state is changed from ready to running -
+     meaning, process is scheduled to execute on the processor - 
+     system normally maintains a pointer/variable that points to 
+     a process descriptor that is currently running - this enables the system to manage a current process, efficiently !!!
+
+   - a process that is running may request for a logical or 
+     physical resource and corresponding resource may be 
+     temporarily unavailable !!! in this case, process state
+     is changed to blocked/waiting/sleeping and pd is added
+     the corresponding waitqueue of the resource, in the system
+
+   - when a resource is available and a process is waiting/blocking
+     for the resource, if the resource is available, it is the 
+      responsibility of the system to wake-up the process !!
+     - state of the process is changed to ready and added to 
+       ready queue and remove it from wait queue  - 
+       it is the responsibility of the scheduler to assign    		  processor to the process, as per scheduling policy 
+       and merit of the process !!!
+
+   - when a process is executing on the processor, due to scheduling  policy and merit of the process, system may preempt the process from the processor - meaning, scheduler will forcibly remove  the process from running state and add it to ready state - this mechanism is known as preemption of a process !!!
+     
+   - if a process terminates normally or abnormally, it enters the terminated state - in the terminated state, all resources  allocated to the process are freed and process descriptor is 
+     also freed - in addition, process id is also freed !!!
+      - what is meant by normal termination of a process ??
+        - when a process completes it work of executing 
+          the associated program's code and invokes 
+          exit() API - typically, exit() API is responsible
+          for termination of the process !!! if we do not 
+          use exit(), compiler's code associated with our 
+          process will end up calling exit !!!it is treated
+          as good convention to invoke exit() explicitly by
+          the developer !!!
+          - exit ends up calling _exit() system call API 
+          - _exit() frees the resources and ends up 
+            calling scheduler of the operating system !!!
+          - how control flows from one part of the system 
+            to another part of the system ???
+
+      - what is meant by abnormal termination of a process ??
+          when a process is forced to terminate, we say 
+         that the process is abnormally terminated - forced
+         termination may occur to due to one of the reasons- 
+         user/developer/adminis. may forcibly terminate a 
+         process or process may get involved in certain 
+         illegal memory or other actitvities and system 
+         decides to forcibly terminate the process !!
+          - this is typically done in one of the 2 ways:
+                - system may forcibly terminate a process
+                  by generating a notification to the process !!1
+                - administrator/ another process may generate 
+                 a notification to the process - in this case, 
+                 a system call may be used to generate the notification !!!
+              
+   - stopped state is a very peculiar state - it enables user/developer
+     /adminis. or system to forcibly stop a process - this is 
+     not same as termination - in this state, resources of the 
+     process are still present, not deallocated !! system or 
+     user/developer/adminis. can wake -up the process, forcibly - 
+     this state is more for convenience !!   
+            - using certain system calls, it is possible to 
+              forcibly stop a process and resume a process !!!
+            - why would you do this ??
+            - can you name another usage where certain 
+              tools may stop and resume a process without 
+              user/adminstrator  intervention ????
+                  - debugging tools use this feature !!! 
+
+
+6. to understand processes further, let us understand certain 
+   details presented in certain chapters of "operating system 
+   by design - charles crowley" following are some important 
+   points that we will gain :
+
+     - we will be able to understand how a process is created
+       and pd is initialized 
+     - what do you understand if a process is said to be executing 
+       in user-space ???
+         - executing in virtual memory environment 
+         - executing in less priviliged mode 
+         - hw interrupts are enabled 
+         - not executing system calls 
+         - code of the program./ application associated 
+           with process is executed !!!
+       
+     - how a process executes in system space 
+        - what do you understand if a process is executing in system space ??
+               - executing in logical memory environmnet !!
+               - executing in priviliged mode 
+               - hw interrupts may be disabled during 
+                 certain sections of system call executions !!!
+               - executes system space code/kernel code, not 
+                 user-space application code !!!
+     - if a process is currently executing a system call API 
+       and system space code is executing, do we say that 
+       process is executing or system is executing ???
+           - in this case, process is executing - not ,
+             system !!! as we discussed earlier, system 
+             code is passive - they are not scheduled - 
+             they are just invoked in the context of 
+             respective process !!! 
+
+     - enables us to understand context saving of a process
+     - enables us to understand context switching between 
+       processes
+     - enables us to understand the impact of interrupts
+       on processes
+     - enables us to understand scheduler's working 
+     - enables us to understand user-space preemption 
+     - enables us to understand system-space preemption
+     - enables us to understand timer interrupt handling 
+     - enables us to understand system call interrupt handler
+       and system call system routines !!  
+
+
+7. chapter 2 of charles crowley :
+   
+   - physical memory addresses are used by processor and
+     memory controller to actually access physical memory 
+   - range of physical addresses allocated to available 
+     physical memory in the system is known as physical
+     address space !!! 
+   - logical addresses or logical address space is 
+     a mechanism provided by processor - this is visible
+     to operating system and processes - in fact, these
+     are the addresses typically used by developer, when
+     we deal with pointers in our processes !!! 
+   - it is the responsibility of processes to use 
+     logical addresses and it is the responsibility of 
+     the processor to translate these logical addresses
+     to physical addresses during run-time, using memory 
+     management unit - this memory management unit will 
+     in turn use the help of operating system and a operating
+      system provided mapping tables - this is a long story, 
+     which will be discussed during memory management !!!
+   - there are dedicated addresses used by a computing system 
+     to access h/w controllers - these addresses may be 
+     located in I/O address space or memory address space - 
+     in either case, these addresses are used to access 
+     h/w controllers by kernel components or device drivers !
+   - understanding general purpose registers and special 
+     purpose, control registers helps in understanding 
+     certain details of process execution / management !!
+   - psw is the processor status word - it is a control
+     register - it has several bits, normally - in our 
+     reference it only contains 2 bits - bit 0 and bit 1:
+     - bit 0 is the priviliged mode bit - 0 means, processor
+       is in priviliged state - 1 means, processor is in 
+       less priviliged state
+     - bit 1 is the interrupt enable bit - if this bit is 
+       set to 0, h/w interrupts will be ignored by the processor
+       - if this bit is set to 1, h/w interrupts are enabled - 
+       meaning, processor will take action !!!  
+     - psw bits may be controlled implicitly or explicitly - 
+       we will see the details as we progress into other
+       chapters !!!
+      
+8. chapter 3 of crowley :
+   
+   - there is a diagram that clearly explains what happens during  invokation of a system call API and also when a system call execution completes !!!     
+
+     - a brief description of the events are below:
+	- when the system call API executes the machine instruction, 
+       ia is saved in iia and psw is saved in ipsw , by th e
+       processor - in addition, 0 is loaded into psw - what is
+       the consequence of loading 0 into psw ??? bit 0 is set to 0-
+       process/processor is switched from less priviliged mode 
+       to priviliged mode !!! bit 1 is set to 0 - processor
+       will ignore h/w interrupts - in short, as long as bit 1 is 
+       set to 0, no hw interrupt will be serviced !!! 
+     - address of system call interrupt handler is loaded into 
+       processor and a jump to interrupt handler is executed
+
+     - eventually, rti machine instruction is executed - this will
+       ensure that iia is moved into ia and ipsw is moved int o 
+       psw - process resumes execution in user-space process
+       that executed the system callAPI  
+
+9. chapter 5 of crowley :
+
+   - if a process is executing in user-space, following are
+     true:
+
+      - assuming scheduler has given sufficient time to 
+        the process, it will continue executing - if 
+        time slice / time share is non-zero / not exhausted !!!
+      - if  interrupts are generated, operating system will 
+        take temporary control and may lead to rescheduling 
+      - the other possiblity is a system call API invocation -
+        this may lead to execution of kernel-space code and 
+        also, may lead to blocking of the current process or 
+        rescheduling  
+      - there is one more possibility of occurrence of exceptions
+        - exceptions may lead to termination of the current process !!!
+      - understanding processes and understanding process control 
+        needs understanding of system space execution due to 
+        interrupts, system call APIs and exceptions - first 2 we
+        will discuss in this context - exceptions will be discussed
+        during memory management !!!       
+
+      - understanding system call execution in system - space - 
+        in this chapter, there are certain assumptions to simplify 
+        the discussions - we will eventually list the limitations
+        due the simplifications given here !!! in addition, we will
+        look into a more complex model in chapter 6, which is 
+        more realiistic, but difficult to comprehend !! following are
+        key points from chapter 5 of crowley:
+        - a  simple pd is used 
+        - a process descriptor table containing limited no. of 
+          pds are used
+        - a single system stack is used among all the processes
+        - h/w interrupt processing is disabled during 
+          system-space execution !! typically, during system 
+          call execution and interrupt handler execution !!
+        - a process cannot be blocked during a system call execution !!!
+        - a process can be preempted during user-space execution 
+        - a process cannot be preempted during system-space execution !!!
+        - h/w context of a process/processor registers' state is saved
+          in pd !! in the save area field of the pd !!!
+           - it is more practical to save h.w contexts on 
+             system stack of the process !!!
+        - in most modern operating systems, operating system 
+          /kernel is responsible for creating and launching 
+          the first user-space process, in the system !!!
+        - in addition, it a natural way by which a new process
+          is invariably created by another process - new process
+          may be known as child process and the creating process
+          is known as parent process !!!
+
+        - in the system call interrupt handler of this model,
+          following are done:
+            - hw context is saved - why is this context saved ??
+              - what does it represent ?? user-space execution 
+                context !!!
+            - general purpose registers' state is saved and 
+              special purpose registers' state is also saved
+              in the save area !!
+            - stack pointer is replaced with system-stack's 
+              top most address - stack typically grows top
+              - down - higher addresses to lower addresses !!!
+            - r8 is stored into a local variable - r8 contains
+              system call no. of a system call API - once 
+              system call no. is retrieved, we can invoke the
+              appropriate system call system routine !! 
+            - in our current discussion, let us assume that 
+              process creation system call is being invoked - 
+              meaning, a new process is to be created by 
+              the current process !!!
+            - further, other parameters are retrieved from 
+               other possible registers - once the parameters
+               are retrieved, they are passed to system call system
+               routine !!!
+            - once a specific system call system routine is 
+              executed, control is given back to system call 
+              interrupt handler - system call interrupt handler 
+              will end up invoking scheduler - in short control 
+              is passed to scheduler() !!
+            - whenever a system call execution is activated,
+              after the execution, scheduler is invoked - this 
+              is one good point where scheduler is given control
+              by the system !!!  
+            - is scheduler() a piece of code or is scheduler() 
+              a process ?? it is just a piece of code invoked 
+              by the system as per certain rules - the points
+              where scheduler is invoked are known as preemption 
+              points !!! whenever scheduler is invoked, there
+              is a possibility of rescheduling - if there is a 
+              rescheduling, it forcibly removes the current process
+              from the processor and reassigns the processor to 
+              another process - this action is typically known         
+              as preemption of a process - due to this, points where
+              scheduler is invoked in the operating system 
+              are known as preemption points !!!
+            - following are the actions taken in createprocess
+              sysproc() system call system routine :
+                - allocate a new process descriptor 
+                - allocate physical memory 
+                - initialize save area fields with appropriate 
+                  values - save area is used duriong process 
+                  creation and during run time of the process !!!
+                - initial logical address is set to 0 
+                - process is forced to execute in users-space 
+                  by setting psw bit0 to 1 - process is forced
+                  to execute in user-space with interrupts enabled
+                  by setting psw bit 1 to 1 
+                - program code and data are loaded into the allocated 
+                  main memory !!!
+                - state of the process is set to ready 
+                - if everything is successfully done,process id 
+                  is returned 
+                - if there is a failure, -1 or -ve error code is
+                  returned !!!
+                - process creation is of 3 stages:
+                     - pd allocation 
+                     - resource allocation and pd initializatiom 
+                     - loading code/data and other sections of the process
+                       into memory
+                - why save area fields are initialized during 
+                  process creation ???
+                      - here, save area is not used to save, 
+                        it is used to initialize the contetx 
+                        of processor registers, when this process
+                        will be scheduled !!1
+                      - if this initialization is not done, 
+                        when the process is scheduled, cpu 
+                        will start executing arbitrary code
+                        and crash !!! 
+                  - after the first scheduling of a newly 
+                    created process, save area is more 
+                    used for saving run-time h/w context !!!
+ 
+            - assuming system call system routine has created a 
+              new process and returned to system call interrupt 
+              handler - this leads to execution of scheduler 
+            - scheduler is made up of 2 routines
+            - first routine does the following :
+              - verifying whether the current process is 
+                eligible for execution - state must be ready
+                and the other is scheduling parameter as per
+                policy - here, we are assuming time-slice based
+                policy - time slice must be non-zero !!
+              - if current process is not eligible to execute 
+                due to one or more reasons, another ready 
+                process is selected, allocated a new time-slice 
+                and scheduled on the processor !!!
+            - in the normal case, current process will be 
+              resumed by the scheduler by loading the user-space
+              hw context that was saved during system call API
+              invokation - in fact, it is the responsibility of
+              the scheduler to dispatch the current process using 
+              the saved context information !!!  
+
+           -  in this discussion following is the summary :
+               - current process invokes a process creation 
+                 system call API
+               - system call system routine has created a
+                 new process/pd and initialized its fields - 
+                 new process is in ready state
+               - after this, scheduler is invoked and 
+                 current process is resumed in user-space
+                 using h./w context that was saved during 
+                 system call API invokation 
+               - once again, current process resumes execution
+                 in user-space - new process is in ready state
+                 waiting for scheduling by scheduler
+               - when the merit of new process is high enough, 
+                 scheduler will use save area context of new 
+                 process and dispatch it on the processor !!!   
+
+
+
+      - in most modern systems, time-sharing / time-slicing 
+        is used for implementing multi-tasking - multitasking 
+        ensures that all processes in the system get a fair
+        time-share and almost execute concurrently !!! time
+        multiplexing of cpu cycles - this is done with 
+        fine granularity - in the order of milliseconds - 
+        users /developers do not see this kind of fine 
+        granularity - it appears that all processes/applications
+        are active at the same time !!!
+
+      - for time-sharing/time-slicing, service of timer hw 
+        and timer interrupt handler is needed !!!     
+
+      - whenever a timer interrupt occurs, timer interrupt handler
+        resets the time-slice of the current process to 0 - meaning,
+        it notifies the process and the system that time-slice
+        of the current process has expired !!!
+             - current process has executed on the processor
+               for the duration of time-slice and it is
+               time for another process to be rescheduled !!!
+      - scheduler is invoked typically in system call interrupt 
+        handler and timer interrupt handler - in addition, scheduler
+        is invoked in all interrupt handlers !!
+
+      - timer interrupt handler ends up invoking scheduler -  
+        as always, scheduler verifies time-slice and state -
+        since time-slice is 0, current process is preempted 
+        and another ready process is selected for dispatching !!!
+    
+      - hw context of the newly selected process is loaded
+        into the registers of the processor by the scheduler
+        - if the process is executing for the first time
+          after creation, the context will that of the 
+          initial context set up by process  creation 
+        - if the process is not executing for the first time   
+          after creation, it will be the saved context of the 
+          process by the system - irrespective of the origin
+          of hw context,scheduler does the same type 
+          of hw context restoration !!!  
+      - time-slice based scheduling policy leads to user-space
+        preemption in this context !!!
+      
+      - what is system space preemption ??? in the current context 
+        of discussion, can we expect system space preemption 
+        of a process ???
+           - assume that our process has executed a system call
+             API and system call API is executing in system space -
+             during this execution, a timer interrupt may occur,
+             as interrupts are asynchronous - if so, do you 
+             expect a premption of current process, in this 
+             scenario ??? not allowed in this context of 
+             discussion !!!
+           - what is the value of bit 1 of psw when process
+             is executing in system space - 0 
+           - assuming that bit 1 is explicitly set to 1 by
+             the operating system, what will happen ??
+              - if a timer interrupt is generated, what 
+                will happen ???
+                  - h/w context will be saved in save
+                    area of pd !!! this will overwrite
+                    the previously saved user-space context 
+                    of the process, when system call API was invoked !!1
+                  - this is unacceptable !!!
+                  - which means, hw interrupts must not be enabled - 
+                    however, this design is unacceptable in a 
+                    modern day operating system - this design was 
+                    used 10-15 years back - today, design has changed !!!
+       - in this context of discussion, is it possible to block a 
+         process while a process is executing in a system call API !!!
+             ?????????
+           - let us assume that the current process may be bl;ocked
+             by the current system call API
+           - to do so, current system call API must save the h/w 
+             context of the current process in the save area - this
+             is needed to restore the execution of the current 
+             process in system space - however, this will lead 
+             to overwritting of the user-space context that was 
+             saved when the respective system call API was invoked
+             by the current process - this is again unacceptable !!!
+           
+       - system call APIs are not blocked - system call APIs block 
+         a current process !!!
+
+       - is it acceptable to disable hw interrupts in system space
+         during execution of a system call routine ?? 
+       - what will be the consequence ???
+            - time slicing may not be properly implemented - 
+              some processes may end up allocting more time-slice
+              and some may allocate less time slice !!!
+            - processes may not be responsive - meaning, a process
+              that must be scheduled may be scheduled later 
+              due to such extended system call activities !!1
+            - I/O devices may not be serviced promptly and this
+              may lead to loss of data or loss of event due to 
+              delayed action !!!
+            - in the case of embedded / realtime scenarios, 
+              these are unacceptable delays - in the case of 
+              other computing, it may or may not be acceptable 
+              depending upon the application that is executing 
+              in the system !!!! 
+
+    
+
+
+10. chapter 6 of crowley :
+      - we will understand the following:
+           - system space preemption 
+           - system call API and blocking 
+           - nested interrupts
+           - usage of system stack for context saving !!1
+
+    - this chapter deals with system space execution of 
+      processes using better context saving and better 
+      preemption techniques !!!
+
+    - why is blocking inside a system call, indispensable ???
+       - this does not mean that system calls block 
+         processes, always - it only means that a system 
+         call may block a process, if a resource is unavailable
+         and waiting for an event is a must !!! 
+    - in chapter 6, a new model, which is more practical is
+      used - following are the advantages :
+        - process descriptor is more sophiticated - it 
+          has fields to note whether the process is executing 
+          in user-space or system-space !!!
+        - each pd has its own kernel stack or system stack - in
+          ch5, only one system stack was used for all processes !!!
+        - system stack is used for storing hw contexts - multiple
+          hw contexts can be saved in system - stack - in chp5,
+          only one hw context can be saved in pd  !!!
+        - hw interrupts are reenabled during a system call 
+          execution !! hw interrupts were disabled in ch5 context !!!
+        - kernel space preemption is allowed in this model !!
+        - a system call may block the current process, if 
+          needed, in system space !! this feature is enabled
+          due to above features !!!  
+    - for a newly created process, addition initialization 
+      steps are needed - insystem counter must be initialized to 0-
+      lastsa pointer must be initialized to NULL !!! if insystem 
+      counter is +ve, process is executing in system space - otherwise,
+      process is executing in user-space !!!
+      
+    - whenever there is a system call API or interrupt, current 
+      process context is saved on system stack - in addition, system
+      maintains enough info. to manage all saved contexts and 
+      the latest saved context as well - in addition, insystem 
+      counter is incremented !! each time insystem counter is  
+      incremented, it means, our process is deeply nested in 
+      system space execution !!! in addition, hw interrupts
+      are typically disabled after a system call API or 
+      interrupt - in chapter 5 model, it is left as disabled -
+      in chapter 6 model, hw interrupts are reenabled - this 
+      will increase the responsiveness of the system to 
+      I/O interrupts and certain scheduling policies !! overall,
+      system responsiveness will increase due to reenabling 
+      of hw interrupts in system space !!!   
+          - insystem is set to 1 when a system call API is invoked !!
+          - when will insystem counter be +ve > 1 - when executing 
+            in system  space, further hw interrupts may be generated !!!
+ 
+    
+     - in this new model, assuming context saving and interrupt 
+       handling is modified, a system call  execution completes
+       and ends up invoking scheduler - do you expect any 
+       change in the scheduler ?? during sensitive code like
+       scheduler, hw interrupts are disabled !! there will 
+       change in the scheduler with respect to hw context 
+       restoration - since hw context restoration is now
+       done using system stack, that part of the code will 
+       change - scheduling policy related code will not be 
+       changed, since it does not depend on hw context saving !!!
+       context restoration is based the latest hw context 
+       maintained by this process, in the system stack !!!
+       in addition, other house keeping activities are done - 
+       basically, certain clean-up !!!
+
+     - to understand this model, let us understand what happens
+       when an interrupt is generated while the process
+       is executing in system space - the details are below :
+      
+        - when system call API is executed, sa1 is used 
+          to save user-space context 
+        - further, when interrupt occurs, sa2 is used to 
+          save system space context 
+        - lastsa of the pd is updated accordingly 
+        - at the end of interrupt handler(any interrupt handler)
+          scheduler is invoked !!! this is a normal convention 
+          in most sensible operating systems !!!
+        - scheduler will use the lastsa info to access sa2 and
+          restore the context - this will resume execution of the 
+          process in system call system routine   
+        - what happens when system call system routine finishes 
+          its work and invokes the scheduler ?? sa1 will be used
+          to restore the context of user-space of the process and
+          resume execution in user-space !!! in addition, 
+          insystem variable is decremented to 0 !!!
+
+       - to understand blocking of a system call, let us understand
+         what happens when a process is blocked inside a system call
+         , in this model !!!
+            - let us assume that a process is attempting to receive
+              a message from a message queue and there is no message
+            - typically, the process is blocked in the waitqueue
+              of the message queue
+                 - message queue is an operating system mechanism - 
+                   it is used to exchange data between processes
+                   - message queues are accessed using system call 
+                     APIs - tx message and rx message system call APIs 
+            - in addition, switch process routine is invoked !!!
+
+            - switch process is responsible for saving 
+              hw context(state of registers of processor ) 
+              such that the process will resume 
+              from the system call system routine after 
+              switch process routine - this is a conventional
+              way of blocking a process and saving its context !!!
+            - in this scenario, saving context is done 
+              by saving r31 and psw, not iia and ipsw - 
+              r31 is saved such that when the process is resumed
+              after wake-up, it will execute in system space 
+              after switch process routine's code - psw is 
+              saved such that processor state is restored 
+              to that of system space execution !!!
+            - this is a good example of saving process context 
+              , without an interrupt/system call API 
+            - when will this process be woken-up and what will 
+              happen when this process is woken up ???  
+            - this process will be woken when a message arrives
+              in this message queue and invariably that is 
+              the responsibility of another system call API executed
+              by another process !!!
+            - it is also the responsibility of that system call 
+              to add the message and wake-up any process that 
+              is blocked for a message !!!
+            - a system call API may be responsible for blocking 
+              a process , if a resource or a message is not 
+              available !!! a system call API may be responsible
+              for waking up a process as well !!! after wake-up,
+              process is added to ready state !!! sometime in the
+              future, scheduler will schedule this process based
+              on its merit !!
+            - when the scheduler schedules this process in the 
+              future,saved  hw context of this process is restored -
+              when it is restored, this process will resume execution
+              in the same system call, after switch process routine !!!
+
+
+11. we can use the understanding of ch6 to understand 2 more 
+    features - user-space preemption and system-space preemption - 
+    we can also understand the benifits of a fully preemptive
+    system vs a partially preemptive  system !!!
+     - fully preemptive system - it supports user-space preemption 
+       and system space preemption 
+     - partially preemptive system - it only supports user-space 
+       preemption !! 
+     - userspace preemption - if a process is preempted when 
+       it is executing in user-space, we say that the preemption
+       is user-space preemption 
+     - system space preemption - if a process is preempted when 
+       it is executing in system space, we say that the preemption 
+       is sytem space preemption !!
+     - as per class diagram on system space preemption, following 
+       are the conclusions:
+
+         - 1 -> 2 -> 3 -> 4 -> 5 is the sequence of execution 
+           flow, if system space preemption is not supported
+           in the operating system or system space preemption 
+           is disabled, currently !!! 
+         
+         - 1 -> 2  -> 6 is the sequence of execution 
+           flow, if system space preemption is supported
+           in the operating system or system space preemption 
+           is enabled , currently !!!
+
+         - in short, it is understood that a system that supports
+           system space preemption honours rescheduling immediately
+           and this improves responsiveness of a system !!!
+         - in a system that does not support system space preemption,
+           rescheduling is honoured after  a delay or latency - 
+           this degrades responsiveness of a system !! we will
+           see more of this during scheduling !!! 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
