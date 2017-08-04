@@ -1,0 +1,1347 @@
+
+1. the basic system call API is fork() - it is used to create a 
+   new, duplicate process as that of the parent process - the parent process
+   and the child process are said to be executing 2 different instances
+   of the same program/application - in fact, that is the reason for creating 
+   a duplicate process - new process is said to be the child process of th e
+   creating, parent process
+        - why do we need to create a new process, in the system - as
+          a developer what do you gain ???
+            - to launch a new application !!!
+            - an isolated execution environmnet which provides
+              its own set of resources and threads !!!
+            - normally, a new process will launch a new application - 
+              normally, a new process will be assoicated with 
+              a new application - different from that of parent process !!!
+            - fork() is a system call API that creates a new process which 
+              executes another instance of the same program/application 
+              as that of its parent !!! - this is very different from a 
+              normal process creation system call API - this is also 
+              a peculiarity of Unix/Linux !!!
+
+        - why does the system need to create a new process ???
+             - for the same reasons mentioned above - to provide
+               an isolated execution env for applications !!!
+                  - fairly independent address spaces 
+                  - meaning, own address space and other control 
+                             parameters !!!!
+
+         - for a new application to be launched in any system,a new
+           process must be created and a new application must be 
+           loaded into that process !!! how this is achieved, varies
+           from one operating system to another - in the case of Unix/Linux,
+           fork() is used to create a new process and exec() family of 
+           calls are used to load a new application !!!
+               - depending on the operating system you work on,
+                 you may need 2 steps or just one step - 
+                 you may have to use 2 system call APIs or 
+                 one system call API !!
+               - in the case of Unix/Linux or similar system 
+                 you may have to use 2 system call APIs to 
+                 achieve this !!!
+
+         
+
+
+2. duplication is done as below:
+    - a new pd is created with most of the fields copied from the parent -
+      typically, credentials are copied - scheduling policy, scheduling 
+      parameter, user id and many more are duplicated - other fields are
+      modified as needed - say, pid (process id) , ppid(parent process id) 
+      and other accounting info. are modified/reset 
+    - a new set of VADs are created and their contents are duplicated from 
+      the parent process !!! meaning, virtual address space of the child  
+      is same as that of parent process - this is also a key aspect 
+      in duplication - still, the parent and the child process will 
+      be executing the same program, but different instances !!!
+    - a new set of page tables are created based on the VADs 
+    - ptes of the child process are duplicated from the ptes of the parent 
+      process - in short, page-frames are shared, but in read only mode -
+        meaning, now, child process and parent process are sharing the
+        same set of page frames, but in read only mode, even if they 
+        are supposed to be set to r/w mode as per the VAD permissions !!!
+        - further, parent and child processes are sharing page frames
+          in ready only mode - this is a special case - now, try to 
+          understand what is given below :
+    - when a child process or parent process attempts to access a virtual 
+      page/address is read mode, access is normally completed 
+    - if a child process or parent process attempts to access a virtual 
+      page/address in write mode, access is leads to generation of a
+      page-fault due to permission error 
+    - if a page-fault occurs in this scenario, system verifies the validity
+      of the virtual address and its original permissions as mentioned in the
+      VADs of the respective process !!!
+    - original permissions for a r/w page/page-frame will r/w in VAD, but 
+      r only in pte of the process - it is the responsibility of the 
+      page fault exception handler to differentiate these scenarios and 
+      take appropriate action 
+    - if a permission related page fault occurs and the original permissions
+      do not support writing(VAD permissions), process will be terminated 
+          - meaning, pte has r permissions and VAD has rw permissions 
+          - in this case, operating system will terminate the 
+            process abnormally !!!
+
+    - if a permission related page fault occurs and the original permissions
+      do support writing, process will not be terminated - it will be provided
+      a new page-frame and the contents of the shared page-frame are duplicated  
+      in the new page-frame - the pte corresponding to the new, duplicated
+      page frame is now set to original permissions - meaning, rw, which is 
+      the same as that of the VAD - meaning, original permissions of th e
+      VAD are passed on to the ptes !!! 
+      such a mechanism is known as copy-on-write 
+      mechanism - this is popular in Unix/Linux and other systems as well !!! 
+               - this is nothing but deferred duplication of 
+                 page frames 
+               - once again, this is an implementation based approach
+               - once again, this is done to use page frames efficiently !!!
+               - this minimizes overheads /latencies during process
+                 creation 
+               - this increases overheads/latencies during run time 
+                 of the process
+               - in a GPOS, run time overheads/latencies are ok ,
+                 but may not be  ok with respect to RTOS systems !!! 
+
+    - this is a form of deferred duplication of page-frames - it leads to 
+      efficient usage of page-frames- text / code /read only areas will 
+      never be duplicated !!! by this technique, certain page frames will 
+      never be duplicated - meaning, they will be permanently shared between
+      processes which use shared code /libraries !!!
+    - in addition, new pd is also provided other objects and resources !!
+    - one such resource is kernel -stack - kernel stack contents of the 
+      child process are duplicated from the parent process with some subtle 
+      changes !!!
+    - since, most of the memory contents are duplicated from the parent process,
+      execution context of the parent process is also duplicated for the 
+      child process !!!
+                  - in the above mechanim, most of the memory areas of 
+                    user-space of a parent process is duplicated for 
+                    the child process - this includes execution context 
+                    due to duplication of user-space stack and duplication
+                    of system space stack !!!
+                  - child starts with a new execution environment, but 
+                    current excecution  context state of the parent process is 
+                    used by the child !!! this is based on the fact that 
+                    child process has duplicated its execution context 
+                    from the parent process !!!
+
+    - the parent process completes fork() system call and returns to user-space
+      to continue execution - as part of the rules of fork(), fork() returns
+      a +ve value when the parent process returns back to user-space - +ve
+      value represents pid of the child process just created !!
+    - if fork() system call fails due to resource constraints or other rules
+      of the system, it will return -1 and pass an error in errno variable
+      of the library !!!
+    - newly created child process/pd is currently added to the ready queue
+      (we will see more of this during assignments) and will be waiting 
+      for its turn to be scheduled by the scheduler 
+    - scheduler will schedule the new process some time in the future !!!
+      assuming our child process gets scheduled, it will resume its execution 
+      after fork() by returning 0 - it is the responsibility of the developer to
+      check the return value to find whether parent process is the current process
+      or child process is the current process !!1
+       - if parent starts after fork(), it is acceptable as per normal 
+         coding conventions 
+       - if we say that the duplicate child process also starts after fork(),
+         how do we justify the behaviour - this is practically true !!!
+
+
+    - based on the above, different code sections of the same program/application
+      will be executed by the parent process and child process !!!
+     
+    - scheduler will schedule the new process some time in the future !!!
+      assuming our child process gets scheduled, it will resume its execution 
+      after fork() by returning 0 - it is the responsibility of the developer to
+      check the return value to find whether parent process is the current process
+      or child process is the current process !!1
+    - based on the above, different code sections of the same program/application
+      will be executed by the parent process and child process  and will be waiting 
+      for its turn to be scheduled by the scheduler 
+    - scheduler will schedule the new process some time in the future !!!
+      assuming our child process gets scheduled, it will resume its execution 
+      after fork() by returning 0 - it is the responsibility of the developer to
+      check the return value to find whether parent process is the current process
+      or child process is the current process !!1
+    - based on the above, different code sections of the same program/application
+      will be executed by the parent process and child process  and will be waiting 
+      for its turn to be scheduled by the scheduler 
+    - scheduler will schedule the new process some time in the future !!!
+      assuming our child process gets scheduled, it will resume its execution 
+      after fork() by returning 0 - it is the responsibility of the developer to
+      check the return value to find whether parent process is the current process
+      or child process is the current process !!1
+    - based on the above, different code sections of the same program/application
+      will be executed by the parent process and child process !!!
+
+3. fork() is a peculiar system call used to create a duplicate process 
+   in Unix/Linux - a few system calls like these are peculiar in unix/linux - 
+   once your cross these, unix/linux is very practical - in other systems, 
+   fork() and similar peculiarities do not exist - rest of everything is 
+   peculiar 
+
+4. fork() is fairly useless without other system call APIs - we need 
+   other system calls - one such system call API is execve() - execve() 
+   system call does the following :
+Note: objective of execl() and family of calls is simple - load/launch
+      a new application/program within an existing process - typcially,
+      this is done within a newly created child process using fork()- 
+      do note that execl() does not create a new process- it uses
+      an existing process to accomplish what the developer wants !!!
+
+
+   - it destroys the current process virtual address space - meaning, 
+     VADs are freed 
+   - it destroys page frames of the current process - meaning, freed 
+   - it destroys page-tables - meaning, freed 
+   - otherwise, most of the other objects and characteristics of the 
+     process are retained via pd and other objects - for example,
+     pid,ppid,credentials, scheduling policy/priority and many other
+     are retained !!!  
+   - a new set of VADs are created based on the newly loaded application/
+     program - the contents of the VADs are initialized based on the 
+     information provided by program header file and rules of the process
+     memory manager !! in addition, during run-time, additional VADs are
+     created and filled as per dynamic memory requirements - for example,
+     heap, dynamic stack expansion, anonymous memory allocations,dynamic libraries
+     and many more !!!
+   - as per the VADs, a new set of page tables are created and associated
+     with the process - in addition, ptes of the new page-tables are initialized
+     to invalid state
+   - old execution context is no longer used - a new execution context is created 
+   - a new, fresh context is created for the newly loaded application and
+     control is passed to the scheduler- scheduler resumes the same child 
+     process with the newly available execution context - using this, a jump
+     is executed to the entry point of the new application, in user-space -
+     the new application starts executing in the same child process !!!!
+         - system stack is overwritten with new hw context for 
+           resuming the main() of the new program in user-space !!!
+
+
+   - execution context and code/data/heap/stack of old application in the 
+     child process are completely destroyed - no longer available !!! 
+
+   - only time execve() or execl() will return to the same application/code
+     of the current process is when execve() or execl() fails to load 
+     a new application in the current process !!! meaning, the only time 
+     execv()/execvl() or family of calls will return is when there
+     is error in completing execv()/execl()/family of calls !!!
+
+   - if you have understood the working of execve(), execl() works the 
+     same way - just that execl() has a different syntax and easy to use
+     compared to execve() !!! 
+ 
+   - most common scenario is that a new, duplicate process is created using 
+     fork() system call API and in the child process, execve() like system call
+     API is used to destroy the current program's VAS and associated memory - 
+     followed by this, a new set of VADs and associated memory will be allocated
+     for the newly loaded program !!!
+   - in short, fork() followed by execve() can yield a new process with a 
+     new program/ application loaded, in it !!  
+   - execve() is seldom used directly - instead, execl() or execv() APIs 
+     built on top of execve() are used, actually !!
+   - execve() is a powerful system call API which will ensure appropriate
+     libraries are loaded as per the requirement of a program or application 
+     by reading the header information of the file !! in fact, these are
+     the internal implementation of execve() system call !!
+   - after execve() or related system call API is executed, previous
+     code resident in the process is destroyed and never executed !!
+     this is a feature that students are seldom comfortable with !!!
+      - this means, any code written after execl() or execve() or
+        similar API,will never be executed - execl() or execve() will
+        never return to the original program, if successful - after 
+        execl()/execve(), execution of user-space code of this process
+        resumes from main() of the program or application !!! 
+
+      - one possible mistake is following ;
+
+                   linei   - ret = execl(); //some application is loaded
+                   linei+1 - ret = execl(); //some other application is loaded 
+         - linei+1 will never execute if first execl() succeeds !!!
+
+      - one more possible mistake is following :
+                   linei - ret = execl(); //load some application
+                   linei+1 - printf(); //diagnostic message 
+
+          - linei+1 will never get executed, if linei is successful !!!!
+
+
+
+   - for example, if you are using execl(), following are the key points:
+             ret = execl(param1,param2,param3,param4,param5,....,NULL);
+
+             - param1 must be the pathname of the application that 
+               must be loaded/launched in the current process !!!
+             - for standard utilities and binaries, use "which" or 
+               "whereis -b" to locate them 
+             - which scans all directories included in PATH environment 
+               variable !!!
+             - whereis -b scans standard directories of the system - 
+               it will list all such binaries found in all the standard
+               directories - we have to make a well informed decision - 
+               for which, we must known more about standard directories
+               and binaries !!! refer to shell related pdf of day1 !!!
+             - if the binary/application is a non-standard , custom 
+               binary, we cannot use which and whereis -b, if such 
+               a binary is not located in standard directories - 
+               we must pass the actual pathname based on our understanding !!!
+
+             - param2 is quite simple - just pass the name of the binary
+               or application - this is needed for the execl() as per 
+               rules of unix/linux process !!!
+             
+             - from param3 to paramn, number of parameters and the value
+               passed for the paramters is decided by the binary/application
+               that  we are launching(param1/param2), not by execl()
+             - you must end execl() with a NULL - this means, no more
+               parameters are present - this is a subtle implementation 
+               syntax !!! 
+
+             - execl() will never return any value, if it is successful 
+               , in launching a binary, in the current process !!!
+                - for example, some think that it returns a +ve value
+                  , when it is successful !!! this is wrong !!!
+             - execl() returns only when there is error and the return
+               value will be  -1 !!!
+                      - possibility of an error is in wrong parameters
+                        - invalid parameters !!!
+  
+             - execv() is just a more convenient form of execl() - 
+               in fact, both end up using execve() !!!
+                  - syntax of execv is :
+                       ret = execv(param1,param2);
+
+                  - param1 is same as that of execl()
+                  - param2 is a pointer to an array - array of
+                    pointers - in fact, each element in the array
+                    is nothing but param2 to paramn and NULL that 
+                    was passed to execl() as a list !!
+                  - whether to use execl() or execv() is left to 
+                    the developer !!!
+                  - rule of ret value are same as that of execl()  
+
+             - what about execlp() ???
+                  - only difference between execl() and execlp() is 
+                    that latter can use just the name of the binary 
+                    in the first parameter - otherwise, execl() and
+                    execlp() are one and the same !!!
+                  - how does this work ??
+                     - every process in unix/linux contains a dedicated
+                       area in the stack segment of the process for 
+                       storing program variables and environment 
+                       variables !!!
+                     - one env. variable stored in environment variables
+                       area is PATH 
+                     - this is true for every process - this includes
+                       shell process (in our case, bash processes) -
+                       shell uses PATH environment variable extensively
+                       - other applications may also use such environment
+                         variables - you will come across more with 
+                         experience !!!
+                     - execlp() and many other system calls may also 
+                       use PATH environment variable of current process !!!
+                     - if a new child process is created using fork(),
+                       child process inherits environment variables of 
+                       parent process !!! after fork(), we may end up 
+                       calling execl(), in the child !! execl() continues
+                       to inherit env variables of the current process,
+                       even if it loads a new application !!!  
+                     - execve() may be used to change the entire set 
+                       of env variables of the current process, when 
+                       a newly loaded application is being executed !!!
+                - second parameter of execl() or execve(), is peculiar -
+                  here, we pass the name of the binary, whose pathname
+                  is passed as first parameter !!! what is the significance
+                  of the second parameter, in execl() ???
+                      - param2 of execl() /execve() is passed as 
+                        argv[0] to the main() of the application 
+                        that is launched by execl() or execve() !!!
+                      - in most cases, this may not be used by the
+                        application - that is not our concern - whether
+                        they use or not, we must follow the rules !!!
+                      - in unix/linux, using argv[0] is very popular 
+                        among many utilities - it is an unix tradition 
+                        - we will see more of this during file system 
+                          discussion !!!           
+                      - if argv[0] is used by an application, what may 
+                        be the use of param1 of execl()/execve() ???
+                            - execl() or execve() uses param1 !!!
+                              execl() and execve() are also known 
+                              as loaders - they invoke appropriate 
+                              loading of application file from the
+                              filesystem and interpreting the contents !!!
+
+ 
+5. when you execute a program or command on the shell prompt, what happens ??
+   meaning, with respect to process creation and loading the application ??
+   - if the shell recognizes the command as internal command(built-in command), 
+     it will just execute certain code to accomplish the functionality
+   - on the other hand, if the command is an external command, 
+     shell invokes a fork() and follows it with an execl() by passing 
+     appropriate program pathname and any parameters !!
+         - who is responsible for creation of a process , here - meaning 
+           fork() invokation ???
+         - who is responsible for launching a new application - meaning,
+           execl() /execv() invokation ???
+
+6. following are some of the characteristics if a Linux process and
+   we will be needing these during practical understanding and coding :
+  
+   - in a linux system, task may be a process or a thread of a process -
+     in our current discussions, task is an user-space  process !!!
+     in the future, there will be many other entities that may be 
+     treated as process !!!
+ 
+   - a typical linux process may be in one of the following states:
+Note: linux process states are subtly different from theoretical 
+      process states, but versatile !!! 
+           TASK_RUNNING       - ready state or running state 
+                              - a running process is identified using 
+                                current !!!current is a special macro 
+                                in system space - cannot be accessed 
+                                from user-space !!!
+           TASK_INTERRUPTIBLE - most common blocked state / waiting state
+                              - if a process is blocked in TASK_INTERRUPTIBLE 
+                                state, it may be forcibly woken up using 
+                                a unix signal mechanism  - a process may 
+                                also be woken up, if an unix signal is generated
+                                for the process !!!what happens after a wake-up 
+                                due to an unix signal, is a long story - we will
+                                see it below !!!
+
+                              - what is the difference between waking normally 
+                                and waking up forcibly ???
+                                    - refer to process.txt for more 
+                                      details !!!
+
+                              - why do we need such facilities ???
+
+                                    -meaning, why do we need forcible wake up 
+                                     facilities like signals !!!
+                                    - if a process is blocked, but unable 
+                                     to wake up normally, system provides 
+                                     a mechanim that can enable the developer/
+                                     administrator to forcibly wake up a 
+                                     process !!!!
+
+
+           TASK_UNINTERRUPTIBLE - less common blocked state / waiting state 
+                                - if a process is blocked in TASK_UNINTERRUPTIBLE
+                                  state, it cannot be forcibly woken up using 
+                                  a unix signal mechanism - only when th e
+                                  appropriate event occurs, process will be 
+                                  woken-up - this predemoninantly used for 
+                                  I/O blocking, where premature wakeup may 
+                                  lead to loss of data and inconsistent data !!!
+             
+           Note: as a user-space developer, we do not have much control over the
+                 above - as a system space developer, we can control the above
+                 states !!! refer to manual page of "ps" command for more   
+                 details !!!
+                  
+
+           TASK_STOPPED         -  a process may be forcibly stopped(not terminated/
+                                   not blocked) - to stop process, a unix signal 
+                                   mechanism must be used - to resume the process
+                                   a unix signal mechanism must be used 
+           Note: there are several unix signals in unix signal mechanism - one
+                 such is SIGSTOP(stopping) and another such is SIGCONT(continue/
+                 resume a process) 
+           Note: this is not same as blocking !!! this is more of 
+                  unconditional blocking and will be woken up only 
+                  by a signal !!! 
+
+
+
+           TASK_ZOMBIE          - 
+                                  this is the terminated state, where all the resources
+                                  are freed - meaning, resources and assoicated 
+                                  data structures are freed, but pd is still retained - this is a peculiar process state that is used in Linux/unix systems !!! there are
+special system calls and macros to extract info. from a terminated process and investigate further !!! it is useful for developers and may not be useful for others !!  
+                         
+           TASK_DEAD            - this is a transitional state, which cannot be seen -
+                                  exits for too short a time for humans - a process
+                                  in TASK_ZOMBIE state will be moved to this state 
+                                  when pd is also freed - meaning, when the process
+                                  is completely destroyed - when a process is completely
+                                  destroyed, it will be removed from every list 
+                                  in the system - that is the reason , we will be 
+                                  unable to see it !!! for a process to move from 
+                                  TASK_ZOMBIE to TASK_DEAD, parent of the process
+                                  must clean-up the corresponding child process 
+                                  using waitpid() system call API - 
+                                  that is one of the reasons why waitpid() is 
+                                  invoked by parent process to do the clean-up of
+                                  a terminated child process - during clean-up 
+                                  pd of the terminated child process is freed !!!
+ 
+        - if a parent process has several children processes,it is the responsibility of the parent process to invoke waitpid() system call API several times using
+   proper techniques - it is a good convention to do so and clean up terminated 
+   children processes - otherwise, terminated children processes may exist 
+   in ZOMBIE state and waste resources !!! in any case, if you need to know 
+   the termination status of the child process, waitpid() is a must !!! 
+        - to manage the above states, system supports several mechanisms and 
+          associated system call APIs 
+        - one such mechanism is unix signals 
+        - another mechanism is cleaning up zombie processes by using 
+          certain system call APIs
+        - how does a process enter zombie state ?? 
+                - abnormal termination - one way of abnormal termination
+                  is using kill command or kill() system call API !!
+                  pkill may also be used !!! do see the man pages 
+                  of kill / pkill / kill() !!! 
+                - pkill helps to terminate all instances of a misbehaving
+                  application - meaning, we can use name of application 
+                  and not PID !!!
+                - any other mechanism to terminate a process ???
+                     - exit() or _exit() or return should be used
+                       for normal termination of a process
+                     - if you end up calling return in your process,
+                       it will return from main() to the library and
+                       library will in turn call exit() - it is still 
+                       preferred to call exit() from our program to 
+                       keep things simple !!!
+                     - ideally, exit() is preferred - use others
+                       if you know what you are doing !!!           
+
+
+7. normal termination of a process - following is the description of 
+   normal termination of a process:
+     - any process that terminates using exit() or _exit() APIs
+       is known to be normally terminated !!
+     - exit() is a library call that executes _exit() and is 
+       popularly used 
+     - _exit() is a system call API which may be used alone or
+       by indirectly executing exit()
+     - do refer to man 3 exit and man 2 exit for more details !!
+       these are manual pages that will provide more details as required !!! 
+     - exit() is the most commonly used API - if exit(0) is invoked, 
+       it means the process terminated normally after completing its work !!!
+     - exit(n) - n!=0 means the process terminated normally, but did 
+       not complete its work !!
+     - the above can be found in the shell's behaviour - if a command is 
+       executed and there is a normal / successful termination, shell 
+       will capture the return value from the process and return to the 
+       developer/user 
+     - in the shell's case, if there is a normal / unsuccessful termination, 
+       shell will capture the +ve error code from the process and return 
+       to the developer/user 
+
+     - when a process is terminated normally, its resources are freed, but 
+       pd is still retained - the state of the process is set to 
+       TASK_ZOMBIE - in addition, the exit code passed to exit() by the
+       terminating process is stored as part of pd 
+
+     - it is typically the responsibility of a parent process to clean-up 
+       the child process and retrieve the exit() code of the child process - 
+       the parent process may investigate the exit() code of the child process
+       ,if needed !!!
+
+     - for cleaning up a child process, a parent process must invoke wait() 
+       or waitpid() system call API - waitpid() is a preferred system call API -
+       wait() is not !!! meaning, waitpid() is a more advanced system call API
+       over wait() - wait() is an older system call API - waitpid() provides
+       more options and flexibility compared to wait() - otherwise, both
+       have the responsibility of cleaning up child(ren) processes !!!
+     - read the manual pages of wait() and waitpid() for more details !!!
+    
+     - when waitpid() is invoked, a parent will do the following : 
+
+        - if the child process is terminated and in zombie state, 
+          parent process will clean-up child process by freeing the 
+          child process pd - also the exit() code of the child process
+          returned to parent via "status" field passed to waitpid() call !!! 
+        - if the child process is not in terminated state(not in zombie state), 
+          the parent process
+          will be blocked inside waitpid() system call API - when the child process
+          terminates in the future, it will wake-up the parent process and 
+          also send a SIGCHLD signal to the parent process !!! a blocked
+          parent process is woken up when a child process is terminated 
+          and system does a wakeup of its pd !!!  meaning, waitpid() is a
+          blocking system call API and must be used carefully !!!
+        - when the parent process is woken-up, it will resume its execution 
+          from waitpid() and complete the clean-up of the child process
+          - waitpid() will return a +ve value, if it has cleaned up a 
+            child process !!! +ve value will be that of the pid of 
+            the cleaned up child process !!!
+        - if a parent process has several children processes, it is the 
+          responsibility of the parent process to invoke waitpid() several 
+          times to clean-up the child process - this will be clear when we
+          practically discuss about waitpid() system call API !! 
+        - waitpid() system callAPI returns a value - this is +ve, if 
+          a terminated child process is cleaned up - waitpid() may also 
+          return -1 - this means, there are no more children processes
+          for this process in the system - using this value, a developer
+          can interpret how to proceed after waitpid() returns - meaning,
+          a developer may invoke waitpid() again and again or break out of
+          the loop !!! 
+
+
+8.  abnormal termination of a process - following are the possible scenarios
+    for abnormal termination of a process :
+        - a process can be forcibly terminated by the system or another process
+          or some code !!!
+        - when a process attempts certain illegal actions, system will 
+          automatically generate certain specific signals to the process and 
+          the process will be abnormally terminated - abnormal here means 
+          process was not terminated using exit() or _exit() !!!
+        - most common abnormal termination occurs due to illegal memory 
+          access - NULL pointer access, invalid/unused virtual addresses,
+          and insufficient access permissions to the particular virtual page
+          /page frame !!! in all these cases, system will generate SIGSEGV	 
+          signal to the offending process and the process will be terminated 
+          abnormally !!!
+                  - starting from 0x00000000, certain initial addresses
+                    are unused by computing - it is a convention that 
+                    must not be broken !!!
+                  - all developers follow such conventions - starting 
+                    from the system developers !!!
+        - when there is an abnormal termination, process that terminates 
+          enters zombie state and the abnormal termination code is stored 
+          in the pd - in this sense,it is same as normal termination, but 
+          the code stored is different !!!
+        - in this case as well, waitpid() must be used to clean-up by 
+          the parent process !!! the parent process may investigate, 
+          if the child process terminated normally or abnormally !!!    
+        - a process may also be forcibly terminated by another process/
+          administrator using kill() system call or kill command !!!
+                - in this case, it is just forcible termination !!!
+
+9. unix/linux signals  
+   - IPC means inter process communication - in real world, this means
+     a lot more - process to process communication - process to process
+     notification - process to process synchronization - system to process
+     communication - system to process notification - thread to thread 
+     communication - thread to thread notification - system to thread
+     notification - system to thread communication - and many more !!! 
+
+   - unix / linux signals come under IPC mechanisms that are used for 
+     notification - notification can be process to process - notification 
+     can be system to process - the details are described below :
+
+   - unix/linux signals are primitive IPC mechanisms that enable notification
+     to process - when a signal is generated, a bit in a bitmap field of th e
+     process is set - several bits in the bitmap field of  a  process - 
+     each bit signifies the occurence of a signal - a signal is generated 
+     as a consequence of an event !! a typical event could be illegal 
+     memory access or explicit notification by administrator or developer !!!
+       - let us understand the signal pending field of a process - 
+         this field has several bits - one per signal - in short, 
+         a signal is represented by a bit in the signal pending field
+         and the bit's position in the signal pending field acts as an
+         identity of  a signal - in a typical linux system, there may 
+         be 64 signals - which means, as many bits are present !!!
+       - a particular signal of a process is said to be generated and pending,
+         if the corresponding bit in the signal pending field of that
+         process pd is set !!! this signal generation can be done
+         by the system or by another process - if it is done by another
+         process, it requires a system call API - kill() is the system 
+         call API that does this job !!!  
+         
+   - if a signal is generated and is pending for a process, it is the 
+     responsibility of the system to take appropriate action  
+   - most common action taken by the system when a signal is generated for 
+     a process is to terminate the process - this is the most common case,
+     not the only case !!! there are other possible actions that we will
+     discuss further, in other scenarios !!!
+
+   - the list of all signals can be obtained from running the command
+      "kill -l" from command line
+
+   - some of the common signals that you may need immediately are as follows:
+
+        - SIGSEGV (generated by the system )
+           - this signal is generated by the system, when a process
+             accesses illegal / unused virtual addresses - NULL pointer
+             access comes under this - one more is when a process attempts
+             to access a read only memory area for writing - say, if a process
+             attempts to access code area for writing - this signal is 
+             generated by page fault exception handler - system terminates
+             the current process when this signal is generated !!!
+           - events are typically illegal memory accesses !!! 
+        - SIGTERM (generated from kill command)
+           - SIGTERM may be generated using kill command and directed 
+             to a process - it uses kill() system call API !!! 
+           - administrator may generate - a developer may generate to 
+             test his application !!! system generates SIGTERM signal,
+             when system is about to shutdown !!! we will understand
+             more about SIGTERM along with SIGKILL  
+        - SIGINT  (generated using ctrl-c from command line or kill command)
+            - what is the use of ctrl-c in a unix/linux system ?? 
+              meaning, what does it do ???
+              - in a unix/linux system, using ctrl-c a foreground 
+                process/process group may be terminated - a foreground
+                process/process group may be in ready queue, blocked or
+                executing - still, we can use ctrl-c to terminate !!!
+              - find out what does ctrl-z do ??
+              - find out what does ctrl-\ do ??
+            - if a ctrl-c is used, how does the system generate 
+              SIGINT signal to appropriate forground process ???
+              - assuming 5000 is the pgid of a such a foreground 
+                process, how does the system know that in order 
+                to generate a signal to that process ???
+                  - unix/linux uses another concept known as 
+                    terminal concept - terminal is an abstract
+                    entity associated with every interactive shell - 
+                    this terminal maintains info. - in that info,
+                    foreground process/process group related info. 
+                    are present !!! 
+                  - there are several virtualized terminals in 
+                    a unix/linux system - this is for the convenience
+                    of users/developers/administrators !!
+ 
+        - SIGKILL (generated using kill command)
+               - to forcefully terminate a process - 
+                 mainly, this is a fatal signal - meaning, it 
+                 will definitely terminate a process - other signals
+                 may also terminate a process, but they may not
+                 definitely terminate the process - we will see more
+                 details during signal handling mechanisms, below !!! 
+               - system uses it during shutdown - system will first 
+                 generate SIGTERM and then generate SIGKILL !!!
+               - system generates SIGKILL for a set of processes
+                 that are using a large amount of physical memory 
+                 and system has entered low memory scenario !!! 
+
+        - SIGSTOP (generated using kill command) 
+               - may be used to unconditionally control a process
+                 to stop and resume - this may be used by 
+                 administrators or by system, if needed !!!
+               - also used by debugging tools !!!
+
+        - SIGCHLD (generated by the system )
+               - in a unix/linux system, when a process terminates,
+                 system generates SIGCHLD signal directed to its 
+                 parent process !!!
+
+
+        - SIGALRM (generated by the system ) 
+               - a process can invoke a special system call such 
+                 that system generates a SIGALRM signal after
+                 a specified time out - this may be used to implement 
+                 certain time-out conditions by developers !!! 
+        - you may come across more signals and events during 
+          other IPCs , networking and other subsystems !! 
+        - apart from the other signals, there are certain signals
+          which do not have a predefined event associated with 
+          it !!! these signals are known as user defined signals 
+          - in this category, there are a set of normal signals 
+            and a set of real time signals 
+          - refer to man 7 signal for more details !!!
+
+   
+   - a signal may be generated using kill command as below:
+     
+        "kill  -<SIGNALNAME>    <pid>" 
+ 
+   - if a signal is generated for a process, the signal's action will 
+     be taken by the system and it is asynchronous - in fact, most signals
+     are asynchronous - meaning, a signal may be generated for a process 
+     at any point of its code execution and action/delivery will also b e
+     asynchronous with respect to its code execution !!! certain signals
+     may be synchronous !!!
+       - synchronous or asynchronous, action for a signal will be 
+         taken by the system only when the repective process is 
+         scheduled - this is a strict rule followed by the system !!!
+       - you must clearly understand the meaning of asynchronous signals 
+         vs synchronous signals !! what do you understand ???
+
+       - a signal generation is synchronous, if the signal is generated
+         at the same point of execution in the process, whenever the
+         signal is generated !!!! in this case, a process must be 
+         executing(running state) for a synchronous signal to be 
+         generated !!!!
+       - in the case of asynchronous signal, a process may or may not 
+         be executing(running state), when an asynchronous signal 
+         is generated !!! in the event that a process is blocked, 
+         when an asynchronous signal is generated, system will 
+
+       - what is the meaning of asynchronous signal action / signal delivery ???     
+             - signal  may  not be delivered, when signal is generated !!!
+             - signal action may be not taken at the same point of execution
+               of the process, whenever action is taken for different 
+               signal generation instances of the same signal type !!!
+ 
+   - read man 2 waitpid()  for specific macros that may be used to verify 
+     the type signal that abnormally terminated a child process  - this 
+     technique will be needed in your assignments to test the exit code
+     and termination of the child processes !! 
+
+   - many of the processor exceptions are treated by the system as 
+     fatal and in response, system will generate synchronous signals !!
+     - these synchronous signals immediately lead to termination of the
+       current process !!
+
+   - let us assume a signal (typically an asynchronous signal is 
+     generated for a process) - the signal will be set in the appropriate
+     signal bit of the signal pending field of the process - this signal 
+     will be pending as long as system does not have an oppportunity 
+     to handle/take action for the respective signal - in most cases, 
+     system will handle a pending signal, when the respective process
+     invokes a system call and returns from a system call - meaning, after
+     servicing the system call, system will check the pending signals just
+     before restoring the user-space context of the process !!!
+         - after a system call execution, system also invokes
+           scheduler !! in addition, it may also take other actions-
+           one such action is scanning for pending signals in the 
+           current process !!! the meanning of this statement is that 
+           whenever scheduler is invoked and it has decided to 
+           schedule a selected process, it will not be able to 
+           immediately resume the process in use-space - it has to 
+           invoke signal handling code of the kernel space, complete
+           any signal handling and eventually, resume the process, if 
+           needed !!! such peculiarities are very common in operating 
+           systems !!! you may need to understand , if required !!!
+         - assumptions in the above case:
+              - signal is typically asynchronous !!!
+              - system is responsible for handling pending signal(s)
+              - system will handle pending signals, when a process
+                resumes from system space to user space - the above
+                is one such instance - there can be several such 
+                scenarios - you must be able to visualize !!!
+              - in this case, process is said to be executing !!! 
+         
+
+   - the most common action taken by the system for a pending signal is
+     termination of the process !!! such a common action is known as 
+     default action of the system !! the action taken by the system 
+     can be customized by modifying the settings in the signal action 
+     table associated with a process !!! there is one entry per signal 
+     in the signal action table of the process !!! using specific
+     system call, a developer may change the settings of the signal 
+     action table entry of a signal of a process !!! 
+          - in this context, we will be using sigaction() to 
+            fill a given entry in the signal action table !!!
+          - whatever we pass via act1 is copied to appropriate 
+            signal entry in the signal action table - this action 
+            will be used, when a signal arrives some time in the 
+            future !!!  
+
+   - in addition, system also scans signal pending field of a process
+     , when the process is interrupted by an interrupt/ISR and system 
+     is resuming the process after interrupt handling - in short, it 
+     is very similar to signal handling after a system call processing and
+     just that this is interrupt processing !! otherwise, all the rules
+     are the same !!!
+
+   - let us assume a process is currently executing on the processor
+     and system generates a signal !!! when will the system scan for
+     pending signals and take appropriate action ???
+        - there is a possibility that a hw interrupt may occur soon ??
+          one such possible interrupt is timer interrupt - another
+          possible interrupt is network interrupt - another possible
+          interrupt is disk I/O and so on !!!
+        - when such an interrupt completes processing and the current
+          is being resumed, system will scan for pending signals  !!!
+        - the above is just one possibility - it may be possible that
+          the current process may have invoked a system call API just 
+          after the signal was generated - it may or may not do so !!
+          - if it has invoked  a system call API,  after completing 
+          the system call API, system may scan the pending signals 
+          and take appropriate action !!! 
+               - depending upon which executes first, a system call API 
+          may be responsible for a signal action or an interrupt handling
+          may be responsible for interrupt action !!!!
+        - if the action is default action(based on the setting for 
+          the specific pending signal, in the signal action table), 
+          current process is abnormally
+          terminated - such a termination by a signal is known as 
+          abnormal termination !!! 
+        - signal action for a process will be taken only when that 
+          process is in running state - for more details, see below !!!
+
+   - each process also has a signal mask field in the process descriptor
+     of the process - if a particular bit of a signal is set in this 
+     signal mask, the corresponding signal is said to masked or blocked - 
+     meaning, this is a way to temporarily mask/block  a signal or a set of 
+     signals - such control can be achieved using a specific system call
+     by the developer on a process !!! however, there are certain signals
+     , which are special and are exempted from masking - these are known 
+     as non-maskable signals !!! SIGKILL and SIGSTOP are these two - they 
+     are typically used to unconditionally control a process !! 
+          - if a signal is said to be masked or blocked, even if the 
+            signal is pending, no action will be taken by the system
+            as long as the corresponding signal's signal mask field 
+            bit is set !!! developer can control this setting on a 
+            per signal basis !!!
+          - certain sections of a process may be critical and sensitive
+            to signals - to prevent signals from interfering with such
+            sections, signal masking/blocking mechanism may be used !!!
+          - SIGKILL and SIGSTOP are known as fatal signals - meaning,
+            will be taken without fail !!!
+
+   - what happens if a process is blocked in sisuspend() 
+     ??/
+        - process is blocked in sys_sigsuspend() waiting for
+          signals - SIGTERM and SIGINT 
+        - let us assume that SIGTERM is generated for this process
+          from another process / system !!!
+        - corresponding bit in the signal pending field of 
+          target process is set 
+        - because SIGTERM is unmasked in the mask passed to 
+          sigsuspend(), target process will be woken up 
+          and added to ready queue !!!
+        - some time in the future, this process will be 
+          scheduled on the processor 
+        - before resuming in user-space, system will scan the 
+          signal pending field of the current process(target process
+          is current) 
+        - system will scan the signal action table of the current 
+          process - if it is default action, current process is 
+          abnormally terminated, immediately - sigsuspend() will
+          never return to user space - meaning, process is terminated
+          inside the system call - this is a common scenario with 
+          respect to signals and system calls !!!
+        - if a non default action is setup and a user space signal
+          handler is installed , what will be the action from here ???
+           - the system space code will now resume the process
+             in the user-space and jump to the signal handler for
+             the respective signal, in user space !!!
+           - user space signal handler is said to be executing 
+             asynchronously with respect to the main() of this
+             process - however, user space signal handler is 
+             also treated as part of this process !!! an asynchronous
+             handler is not supposed to block or invoke a blocking 
+             system call API - this another convention universal 
+             in computing !!
+                   - the original user-space context saved 
+                     when the system call was invoked must be
+                     saved safely 
+                   - a new user space context must be generated 
+                     for the signal handler's execution !!!
+            - assuming that user space signal handler finishes, 
+              what will be the next sequence of actions ???
+                   - after finishing the signal handler, 
+                     signal handler is forced to execute 
+                     a special system call API - this is 
+                     a trick played  by the operating system !!!
+
+            - what will happen if the process enters system space 
+              again with the help of a trick and a system call API ??
+                    - reload the original user space context that 
+                      was saved during signal handling - by doing 
+                      this, we will return to user space and resume
+                      from sigsuspend() !!!
+            - for the above to work, operating system manipulates
+              system stack as needed and user space stack as needed- 
+              you must get used to such tricks and this will help 
+              you understand concurrency better !!!
+
+
+   - a signal may be generated for a process that is in Running state or 
+     in blocked state - if a process is in Running state(Running/Ready) 
+     and a signal is generated, the corresponding signal bit is set and 
+     signal action/handling will be processed in the near future by the
+     system, when the sytem has opportunity !!! if the process is in 
+     interruptible blocked state and a signal is generated, the process
+     will be woken up as well as process descriptor will be moved 
+     to ready state !!!in addition, corresponding signal pending bit 
+     will also be set !!!
+        - what will happen, if a process is prematurely woken up 
+          due to a signal ?? what will be the consequence ???
+           - meaning, after it is wokenup and it is scheduled ???
+                - if the action is default, process may just be
+                  terminated !!!
+                - if the action is developer decided, an alternative
+                  signal action may be taken with help of a signal 
+                  handler !!! 
+
+                - if a process is blocked ina system call API, 
+                  it may be woken by a signal , if that signal
+                  is currently not blocked in the context of 
+                  current  process !!! if a signal is masked in the
+                  context of the current process and a signal 
+                  arrives, signal bit will be set inthe pending 
+                  field of the pd, but process will not be woken up -
+                  like this, there are many peculiarities in signals !!!
+
+ 
+   - if a process is blocked in uninterruptible blocked state and 
+     a signal is generated, corresponding signal pending bit will be 
+     set, but process will not be woken-up - this is the reason 
+     for a special blocked state known as uninterruptible blocked state !!!
+          - this state may be used by the developers to ensure that 
+            certain critical events for which a process blocks will 
+            not be disturbed by signals !!!
+
+
+   - a typical confusion is between signal generation and 
+     signal action/delivery - do not confuse the above 
+     rules by mixing signal generation and delivery - some 
+     of the above rules apply only to signal generation and 
+     some of the other rules only apply to signal delivery !!!
+      
+10. unix/linux signals related system call APIs and their details:
+
+Note: as you read the below section, refer to example1.c and 
+      msg_server.c - it is better to understand the system 
+      call APIs along with examples !!!
+
+    - sigaction() system call API 
+    - it takes 3 parameters - first parameter the identity of th e
+      signal no., second parameter is the pointer to struct sigaction {} 
+      object, in user-space and third parameter is also a pointer 
+      to struct sigaction {} object, in user-space !!! mostly, the 
+      third parameter is unused - meaning, we can pass NULL !
+         - let us understand struct sigaction {} fields
+             - .sa_handler field is used to pass the signal
+               handler's pointer for the specific signal passed
+               as param1 of sigaction() system call API !!
+             - .sa_flags field will be used to set certain 
+               flags such that behaviour of the signal handler
+               can be modified !!! to start with, we will not 
+               be setting any flags - meaning, flags will be set to 0 !!
+             - .sa_mask field is the signal mask field used when 
+               the corresponding signal handler is executing - do 
+               not confuse with other signal masks - this signal mask 
+               is entirely different and is valid only during the 
+               executiion of the specific signal handler !!!
+
+
+    - sigaction() system call uses the information provided in 
+      second parameter to fill appropriate fields of the corresponding 
+      entry in the signal action table of the process, in system space - 
+      the entry will correspond to that of the signal's identity mentioned
+      in first parameter of sigaction() system call API !!!
+
+    - using sigaction() system call API, it is possible to provide
+      a signal handler, which is different from the default signal action !!!
+      - if such a signal handler is installed using sigaction() system 
+      call API, when corresponding signal is pending and signal handling/
+      action is taken, the system will process/execute the corresponding 
+      signal handler and then, resume the process as before - meaning, 
+      signal handler will be executed in user-space and process will be
+      resumed to continue in users-space as before !!!
+
+    - signal handlers are similar to interrupt handlers, but execute 
+      in user-space and serve  processes, in user-space  !!!
+
+    - signal handlers are expected to be short and must not execute
+      blocking system call APIs - in addition, signal handlers can 
+      execute concurrently with the process's main code - however, 
+      no race-conditions are allowed !!! it is an asynchronous routine !!!
+        - any asynchronous routine must follow most of these 
+          rules !!!
+        - meaning, must not block inside an asynchronous
+          handler and must not invoke blocking system call APIs
+          in asynchronous system call APIs  
+        - race conditions due to such asynchronous handlers are
+          difficult to manage !!! this will be clear when we understand
+          about locking mechanisms !!! 
+        - main() of a process and a signal handler may execute concurrently 
+          within a process - however, a signal handler is not a process
+          - meaning, it must not block - however, if it executes concurrently 
+          with respect to a process, it may face race conditions with respect
+          to main() /other parts of a process - this must be taken care
+          differently - we cannot use conventional locks - meaning, semaphores
+          and similar blocking locks cannot be used !!! 
+        
+
+    - signal handling is a complex task handled by the system - 
+      as a developer, you must understand the rules of the  
+      signal handler and install it - the system will take care
+      of executing it at appropriate times, when corresponding 
+      signal is generated and is pending !!!  
+
+    - let us assume that you must use a signal handler for a specific
+      signal in your process and due to the coding constraints you 
+      are faced with race condition between certain code of your
+      main() and certain code of a signal handler !!! how would 
+      you solve this problem ?? ideally, you can give a clear 
+      answer after studying IPCs !!! still, is there a way to solve
+      this problem using signal related system call APIs ????
+          - semaphores cannot be used !!!!
+
+                    
+
+    - sigprocmask() is another system call API that can be used
+      by the developer to set the signal mask field of a process - 
+      by doing this, we can control the signal mask field of 
+      the process and also control the response of a process 
+      to different signals !!!
+           - using this, one or more signals can  be blocked/masked
+             or unblocked/unmasked as needed !!
+
+    - using sigprocmask(), the second parameter helps in setting 
+      the signal mask field of the process, in system space !!!
+      first parameter is the command that enables us to tell 
+      sigprocmask() system call API to use the second parameter to 
+      set the signal mask field of the process !!!
+
+    - refer to example1.c - this is the example you will be modifying 
+      and using in assignment2 - in this, sigprocmask() is used to 
+      control the signal mask field of the process - you may continue
+      using the signal mask field as per your requirement!!! in 
+      addition, you  may use sigaction() to install appropriate 
+      signal handler for specific signals in example1.c - in addition, 
+      you may use sigsuspend() system call API to control blocking/
+      wake-up of a process that may execute example1.c !!!
+ 
+    - sigsuspend() is a tricky system call - its functionality 
+      is explained in the comments given in example1.c - in addition, 
+      following is a detailed summary of its functionality :
+
+          - it blocks a process and enables a process to block 
+            for signals (events that may generate signals) -
+              it enables a process to block for a set of signals 
+              while being blocked in sigsuspend() system call API !!!
+          - sigsuspend() takes a mask field - this mask field 
+            will decide, which signals will be blocked during 
+            sigsuspend() call and which signals will not be !!
+Note: system will use different mask fields per process, in 
+      different contexts - you must not be confused and you 
+      must not mix up one mask with another - system takes
+      the responsibility of using the appropriate mask for
+      appropriate context !!!
+          - signals that are not blocked in the signal mask 
+            passed to sigsuspend() will be allowed to wake-up 
+            the process blocked by sigsuspend() system call API !!
+          - if no signal handler is installed for an unblocked signal,
+            the process will wake-up, but system will take appropriate
+            default action and most likely this action will be 
+            termination of the process !!!
+          - if a signal handler is installed for an unblocked signal,
+            the process will wake-up, system will process the signal 
+            handler and the process will resume its execution after
+            the signal handler - this is effectively resuming after 
+            sigsuspend() system call API !!!  
+                - if a signal handler is installed, sigsuspend will
+            block, wakeup , execute the handler and resume process 
+            after sigsuspend() - such implementation peculiarities
+            are very common in operating systems !!!     
+
+          - if the signal bit of a signal is set in the signal mask
+            field of the process,the corresponding signal will not 
+            be delivered/no action by the system  if it is generated 
+            for the process - meaning,the corresponding signal will be 
+            set in the signal pending field and will not be delivered 
+            till the corresponding signal's bit in the signal mask field 
+            of the process is reset to 0 - this is just a form of control 
+            for a process with respect to signals !!!  
+
+
+11. execution flow of a multi-tasking application which has a parent and 
+    several processes :
+
+    - flow of execution is highly dependent on the underlying implementation
+      ,scheduling policy of the processes and the no. of processors/cores
+      in the system !!!
+    - in a UP (uni processor) system the following are true :
+         - in most modern unix/Linux systems, child process
+           may be scheduled to execute first - may not be true also
+         - the meaning is that child process is given preference
+           by the scheduler - we may change it by certain settings !! 
+         - let us assume that a child process is created from a 
+           parent process and it is a simple multitasking - in this
+           case, child will execute first as per the above rule, after
+           fork() - meaning, after the fork() system call API is executed
+           by the parent, control is passed to the scheduler() - scheduler()
+           prefers to schedule the child process first, not parent process
+           - when the child process completes execution and invokes
+           exit() system call API, child process is terminated and control 
+           is passed to scheduler(), again - assuming our parent process
+           is eligible for scheduling, scheduler() will resume our 
+           parent process - parent process will complete its work and 
+2P:wq
+           invoke exit() system call API - when exit() is invoked, parent 
+           process will terminate and control will be passed to the scheduler()
+           , again !!! this is one way of visualizing execution flow of 
+           parent and child processes, in a uniprocessor system !!
+
+            - by manipulating command line parameters of operating system 
+              kernel, we can force the operating to use only one processor
+              from several processors, in the system - this is mainly useful
+              to understand many system call APIs and working of the system !!!
+            - we may change this setting any time as needed 
+            - in our lab machines, we can modify certain setting such 
+              that we can enable the system to execute in UP mode or 
+              MP processor mode 
+            - for our lab machines, this will be done by administrator - 
+              if you do not have this setup, ask the admin.    
+
+     
+
+
+    -  in a MP(multi processor) system the following are true :
+          - after fork() system call API, parent process will 
+            create a new process and the new process may end up 
+            in the ready queue of another processor !!! after fork() 
+            system call routine, system will end up invoking scheduler()
+            on the current processor and parent may  be eligible  to 
+            resume, if the child is pushed to another processor's 
+            ready queue - meaning, child is now under the control 
+            of another processor's scheduler !!!
+          - at the same time or some other time, child process may 
+            be scheduled by another scheduler on another processor !!!
+            meaning, parent and child process may be executing in
+            parallel on other processors !!!  
+          - the above is a possible scenario in a MP system - 
+            depending upon load conditions and load-balancer implementation,
+            we may find other possible scenarios !!!
+          - in a multiprocessor system, do not exepect any particular
+            ordering of processes, as the processes may be scheduled
+            on different processors as per their merits by 
+            respective schedulers of the processors !!!
+            
+          - depending upon UP or MP systems, multitasking and execution 
+            order might differ - as a developer, your code must be 
+            tolerant and work consistently in all the above cases !!!
+   
+Note: the above statements are purely based on scheduler's behaviour - in addition,
+      system may have other influences - for example, I/O issues, IPCs , 
+      page faults and many more - so you may not see an exactly same set of
+      results - they results may be slightly distorted !!! these are the 
+      real problems of concurrency, in a real system and real applications - 
+      you must use what is given here as guidelines and still understand 
+      the behaviour based on your applications and system configuration !!!
+      - it is very difficult to provide a strict order of execution in 
+        these systems - we will see more of this during RTOS systems !!!!
+      - using certain utilities, we can force the behaviour of the system 
+        to a certain extent - examples are taskset, chrt and many more !!!
+
+
+
+12. a few useful hints on waitpid() :
+
+    - if a child process is terminated and the parent process invokes
+      waitpid(), waitpid() will clean up the child process and 
+      return a +ve no. - the +ve no. is the pid of the child process
+      that has just been cleaned-up !!!
+    - in addition, if a child process is cleaned-up , waitpid will 
+      also return the exit code information via status variable whose
+      address is passed as second parameter to waitpid() - you are not
+      expected to interpret the status variable's information , directly-
+      you must interpret the status variable's information using 
+      macros provided in the man page of waitpid() !!!
+    - if waitpid() is invoked by the parent process and no child process
+      is currently in terminated state, the parent process will be blocked
+      by waitpid() - system will ensure that the parent process will be 
+      woken up when a child process enters terminated state !!! system
+      generates a SIGCHLD signal to the parent process, when a child process
+      enters terminated state !!!
+    - waitpid() must be invoked several times to clean-up all the children
+      of a parent process - this may lead to calling waitpid() , in a loop,
+      but the loop must be broken when waitpid() returns -1 - meaning,
+      when all the children processes of a parent process are cleaned-up,
+      waitpid() returns -1  
+
+    - using specific macros, status field may further investigated !!!
+      - refer to sample codes for different macros - refer to manual 
+        page of waitpid() for further information !!!
+      - WIFEXITED() is a macro that will return true, if child process
+        has terminated normally !!!
+      - WEXITSTATUS() is a macros that will return the value of the
+        exit status code returned by child process via exit() - see the 
+        details given above in this text !!!      
+      - combination is useful - refer to sample code !!!
+      - refer to other macros in manual page of waitpid() to understand
+        more on abnormal termination scenarios - we will explore more
+        on abnormal termination scenarios during unix signals !!!
+
+
+ 
+13. as per the understanding and working of fork(), execution flow of 
+    parent process is fairly clear - it is more based on execution of 
+    a system call API - like any system call API, control is passed to 
+    system space and control is returned to user-space - refer to diagrams
+    in day1's slides !!!
+    - in addition, fork() creates a new process with all the qualities described
+      above, in this text - in addition,child process is added to ready queue
+      of the system !!1  some time in the future, child process will be scheduled
+      to execute - it is expected to execute from the system space and return to
+      user-space - when returning to user-space,  it will return with a return
+      value 0 - how is this forced ??? can we visualize this behaviour ???
+        - when the child process is being created, its execution context is 
+          is provided by the parent process - this execution context must 
+          be manipulated by the fork() system call routine in system space -
+          if this is done, when the child process gets opportunity to be 
+          scheduled on the processor, it will resume as per the earlier context 
+          that was setup by the fork() system call routine !!!! 
+
+14. the above are the standard rules for process control - a developer or 
+    system is expected to work as per above rules for efficient process
+    control of processes !!!     
+    - what happens if a parent process terminates without cleaning up 
+      its children processes due to various reasons - parent process may 
+      terminate abnormally or might fail to clean up some children processes
+      due to  bugs and many more scenarios !!!
+    - if a parent process terminates without cleaning up a child process, 
+      child process is reparented to init process (with PID=1) by the system-
+      this ensures that child process always has a parent and it is the 
+      responsibility of the init process to clean up such reparented 
+      children processes, when they are terminated - such reparented processes
+      are known  as orphaned processes - they can continue executing normally -
+      there are no special restrictions !!!
+    - in general, you may not be able to see a zombie process - this is because, 
+      a parent process or init process has a close watch such zombie processes !!
+      if such a zombie process terminates, they are immediately cleaned-up - in 
+      the rare case that parent process has not immediately cleaned-up the child process,
+      you may see such a zombie process !!!
+
+15. although all Linux systems have many things in common, there are subtle
+    difference  :
+
+         - version of the operating system distribution will be different 
+                - class system uses opensuse 11.3 vs lab system uses
+                  opensuse 11.2 
+                - further, each sw component may also be of different version
+                     - operating system core version is 2.6.34-<extraversion>
+                       in the class system 
+                     - operating system core version is 2.6.<xxx>-<extraversion>
+
+                - depending upon the operating system distribution version and 
+                  depending upon core version, system parameters will be set up 
+                  differently !!!
+
+16. process level multitasking and thread level multitasking may be useful
+    in the following contexts :
+
+            - network programming 
+            - driver programming and testing
+            - multiprocessing / HPC coding
+            - rtos programming
+            - embedded programming 
+            - many more depending upon your area of work !!!
+
+
+
+17. sched_yield() - read the manual page and also understand the following statements :
+
+    - this API was introduced to support yielding among processes with realtime
+      priorities and realtime policies !!
+    - for instance, if we use FIFO(PRIO) real time scheduler in Linux, if all processes
+      have equal prority,the behaviour is first in first out - in addition, developers
+      may use sched_yield() to implement cooperative scheduling policy between these
+      equal priority processes - these techniques may be useful in custom, engineering
+      and scientific applications !! may not appeal to a desktop system !!!!
+    - although this is applicable for real time policies, Linux has implemented
+      it for non real time policies as well !!!
+    - in order to enable this feature for non real time policies, you must 
+      set a system parameter ;
+
+                  /proc/sys/kernel/sched_compat_yield 
+                  
+                   echo 1 > /proc/sys/kernel/sched_compat_yield (enables sched_yield()) 
+                   or
+                   echo 0 > /proc/sys/kernel/sched_compat_yield (disables sched_yield())
+    - the above settings need super user priviliges - meaning, you need to login 
+      with super account !!!!
+    
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
