@@ -1,0 +1,1286 @@
+1. operating system can seen as a set of system s/w components
+   that manage h/w and logical resources in the system on 
+   behalf of applications and users 
+        - users can be developers
+        - users can be administrators(normal / abnormal)
+        - users can just be basic users of the computing !!
+        - there are hybrid users as well !!!
+        - how do we define system software components
+          of a computing system ???
+            - s/w components that may be used to provide
+              environment and functionality to application 
+              s/w components !!!
+                   - icompiler/assembler  and related !!!
+                   - CLI / GUI interfaces !!
+                   - system libraries !!!
+                         - you may use it for more control 
+                         - you may use it to develop your own libraries !!!
+            - s/w components that initialize h/w resources !!!
+                   - device drivers
+                   - I/O subsystems 
+
+            - s/w components that manage h/w resources !!!
+                   - I/O subsystems
+                   - file system manager - manages disk space!!!
+                      - this component will not directly deal/control hw 
+                        components - it will depend on other components 
+                        for such hw control !!
+                   - physical memory manager - a critical component that 
+                     may be involved in certain sensitive activities !!!
+                   - CPU scheduler - has direct control over the 
+                     applications and other system components !! 
+                   - virtual memory manager - swap-space management !! 
+                       - this component provides control and flexibility 
+                         in the case of sensitive applications !!!
+                           - virtual address / logical address to 
+                             physical address mapping
+                           - this is useful in memory protection 
+                             in processes !!!
+                           - performance issues related to VMM
+                             in embedded and real time systems !!!
+                           - loading applications/processes larger
+                             than physical memory size of the system !! 
+                           - you may fine tune the physical memory 
+                             and swap space of a given computing system
+                             as per the applications' requirement !!!   
+
+ 
+            - s/w components that provide interface between 
+              user and computing system !!!  
+                - CLI/GUI interfaces
+                - system libraries
+                - system utilities/tools !!!
+                     - task utilities - to control/terminate 
+                       certain applications in the system !!!
+                           - as a developer - managing own 
+                             processes/threads !!!
+                     - file system defragmenter !!!
+                     - system parameters tuning using 
+                       special utilities !!!
+                          - operating system parameters can 
+                            be tuned as per requirements of      
+                            the administrator or developer !!!
+                          - in Linux, you will be dealing with 
+                            procfs and sysfs !!!
+                     - as we progress and do more practicals,
+                       serveral utilities will be used - you may 
+                       learn one after another !!!
+                     - these system utilitie invariably use
+                       system libraries and interact with 
+                       core system components !!!                 
+
+
+            - s/w components that make up the core and non-core
+              parts of the operating system - core components
+              are mainly responsible for initializing and 
+              managing the h/w resources and providing 
+              services to non-core components, applications
+              and users - non core components are libraries,
+              utilities/tools and execution frameworks that enable
+              the users/developers/administrators to interface
+              and utilitize the core services of operating system !! 
+                 - core components may be more priviliged than
+                   non core components !!!
+                     - what does it mean by more priviliged, here ???
+                          - most core components can interact with
+                            h/w resources/controllers, directly !!!
+                          - core components may have access to 
+                            all parts of the system memory !!!
+                          - certain core components may be given
+                            higher priority and accordingly more
+                            cpu time !!
+                          - core components can directly interact 
+                            and allocate memory from the physical 
+                            memory manager !!!
+                - core components are very essential for the 
+                  computing system and non core components and
+                  applications may not be able to function without 
+                  the former !!!
+ 
+2. operating system also provides an environment in which developers
+   can develop and build applications 
+      - software development kits, if any !!! 
+            - you will learn more when you work in the lab !!!
+3. operating system also provides a controlled environment in which 
+   applications can be loaded and executed
+      - scheduling several active applications, in a multitasking 
+        environment !!processes are typically used !!!
+      - support inter process communication 
+      - manage server processes / server daemons !!!
+      - virtual memory environment !!! 
+            you may or may not use this feature/mechanism!! 
+                - depending upon application size, we may or may not use it !!!
+                - it also depends on deterministic requirements and 
+                  acceptance of non deterministic behaviour !!1
+                - why vm is popular in GPOS systems ???
+                     - efficient multitasking and efficient usage of 
+                       physical memory !!!
+                - operating system manages multiprocessor, multitasking !!!
+                - why multiprocessing ???
+                    - to increase throughput !!!
+                    - several cpu resources are needed to implement 
+                      deterministic/responsive scheduling for several 
+                      processes/tasks !!!
+                    - depending upon your requirement, you will come 
+                      across appropriate os services !!!
+                       - in this case, os will provide certain 
+                         services without intervention of the 
+                         developer 
+                       - in this case, os will be provide certain 
+                         services to be used by the developer 
+                         , as needed !!! how does a operating 
+                         provide services to the developer ???
+                              - mostly via system call APIs !!!
+                       - in certain cases, services are offered
+                         via system utilities !!!
+      - exception handling - fatal error handling 
+                    - applications or system sw components are 
+                      terminated by handling execptions with 
+                      strict rules - this enables developers 
+                      and users to rectify and fix the bugs !!!
+                        - applications may crash for various reasons-
+                          one could be a fatal exception - another
+                          could be lack of resources 
+                             - what is the understanding of application
+                               crash, in this context ??
+                                - application is abnormally terminated
+                                  by the operating system !!!
+                             - who is responsible for crashing 
+                               the application ??
+                                - operating system / cpu may be 
+                                  involved in generating exceptions !!!
+                             - how is the crashing achieved ???
+                                - forced termination by operating system 
+                             - what is the meaning of fatal exception
+                               in this context ???
+                                - this depends on how the processor 
+                                  treats the illegal action of a 
+                                  application !!! some very good 
+                                  examples can be seen during memory
+                                  management !!!
+                             - give a scenario for lack of resources
+                               and crashing of the application ???
+                                 - this is typically not an exception !!!
+                                 - in a virtual memory system, when
+                                   virtual memory resources are 
+                                   exhausted and certain processes 
+                                   are still demanding for memory, 
+                                   oeprating system may terminate
+                                  one or more such processes !!!
+
+
+                        - not all types of application crashes are 
+                          possible in all computing environments - 
+                          certain computing environments may be  
+                          using robust techniques such that most '
+                          of such crashes/abnormal terminations are 
+                          eliminated !!! ultimately, it depends on the
+                          execution environment provided by the OS (RTOS)
+                          and developers' skills !!!
+                             - the execution environment may be fine 
+                               as per the requirements of the 
+                               computing system/applications !!-
+                             - the above are true in the case of 
+                               any OS !!!
+
+                   - it is also the responsibility of the operating 
+                     system to generate its own crash, if certain 
+                     core component misbehaves - this is a built in 
+                     intelligence !!! the intelligence is implemented
+                     in the form of code , which includes a detailed
+                     set of rules !!!
+                   - why do operating systems crash ??
+                      - unable to load a critical module/component of the
+                        core of the OS !!! 
+                        unable to detect /initialize a 
+                        critical hw component in the system !!! 
+                   - what is a crash ?? 
+
+                   - who is responsible for 
+                     generating  a crash ???
+                         - core components will have check points in their
+                           code and they generate the crashes, if a check 
+                           fails !!
+
+
+      - secure environments such that applications 
+        can be executed securely !!!  mainly, applications are 
+        executed in well protected environments !!! what does this 
+        mean ???
+            - can one application arbitrarily interfere with 
+              another application ???
+                  - different, isolated address spaces(memory spaces)
+                     - MMU unit of the processor and critical 
+                       core data structures !!! we will see the 
+                       details during memory management !!!
+                  - system calls and system space management of 
+                    critical data structures !!! 
+                       - how is this achieved ??? these are achieved
+                         using processor's capabilities - in fact,
+                         many interesting features of operating 
+                         system are due to processors' capabilities !!1                        - it uses more than MMU capability of the 
+                         processor !!!
+                       - ofcourse, operating system can program/reprogram 
+                         these facilties as per its requirements - processors
+                         provide such a suitable interfacing !!!
+                       - many of these low level control code
+                         are present in the HAL of the operating 
+                         system core !!!
+
+4. operating system is made up of several components - it is a very 
+   long list and each component is quite complex and may require
+   a separate study of its own - one good example is memory subsystem 
+   - another complex and vast sub-system is I/O 
+        - our study will mainly focus on certain core 
+          components - once you understand the working 
+          and usage of core components understanding 
+          non-core components is easier - even understanding 
+          other core components becomes easier !!!
+        - typical operating system books focus on core 
+          components - other professional books that 
+          deal with certain services of an operating system 
+          may deal more with non core components !!!
+            - your case may involve studying a specific RTOS and
+              its interfaces - it may also involve studying and 
+              using a specific add on component in that RTOS , which 
+              may be useful in your domain/work !!!
+
+Note:(analogy could be a processor chip or any other 
+      peripheral controller chip !!!) 
+
+       - can you see the system data structures/objects ??
+            - say a process descriptor, for instance !!!
+            - humanly, not !!! may be a super -human !!
+            - micro level details cannot be seen !!! 
+
+       - can you access system data structures/objects ???
+
+           - via system utilities and system calls !!!
+           - can we literally access using our code ???
+               - kernel debuggers 
+               - writing your own system call code or 
+                 writing your own kernel module !!! this is 
+                 typically achieved using system space coding
+                 and you may need to such work, if required !!! 
+
+5. most components interact with each other and do not exist as 
+   stand alone components - understanding one component may depend
+   on one or more other components - depth of study will differ
+   depending upon our requirements 
+
+6. all the components co-exit in a layered and hierarchical form, 
+   in the system - although there is no strict layering or hierarchy, 
+   there is a general model that is used for our study - one aspect 
+   is layering and another aspect is modularity !!! 
+    - what is the meaning of layering ??
+       - a component is dependent on another component !!!
+       - flow of control / commands / data is strict 
+         and higher levels to lower levels or vice versa !!!
+    - what is the benefit of layering ???
+       - changes / updates in one layer may have minimal 
+         effect on other higher/lower layers !!!
+       - a standard set of interfaces which are mostly 
+         static / may undergo minor changes !!!
+    - still, to work with a layer, it is better to understand
+      the functionalities / limitations of higher/lower layers !!! 
+           - important requirement for system sw developer !!!   
+
+   what is 
+   layering and what is modularity ???
+    - core features can be added or removed as needed !!! drivers
+      /I/o subsystems/filesystems(filesystem managers)/
+      network protocols and many more !!!
+    - one or more modules may be added or removed from 
+      a layer, in the system - this will be done as 
+      per the requirement of the user/developer/administrator !! 
+
+    - configuration and rebuilding of the core(restart system!!!)
+    - adding/removing kernel modules to the core of the system !!!
+      (no need to restart the system - run-time dynamic loading )
+
+7. some of the layers interact very closely with the h/w controllers - 
+   one such is HAL - hardware abstraction layer - I/O subsystem and
+   device drivers are major contributors to interaction with h/w 
+   controllers !!!
+     - HAL is a layer/component of core of operating system !!!
+     - I/O subsystem manages drivers and devices(logically)
+     - HAL is written in machine language
+     - drivers are more in high-level language and specific 
+       to a specific device controller - drivers use HAL 
+       to accomplish their work 
+     - there are many other core components that interact/ use
+       HAL to accomplish their work 
+     - depending upon underlying processor arch./board, HAL
+       will be different for a given operating system - if 
+       a given OS has a specific HAL for a specific 
+       arch/board, that OS can be loaded to manage the correponding
+       arch/board - otherwise, it is not possible !!!
+
+Note : in what ways GPOs may be different from RTOS ??
+       in what ways GPOS may be different from EOS ???
+       in what ways a given GPOS may be different from another GPOS ??
+       in what ways a given RTOS is different from another RTOS ???
+            - say for example, a given RTOS may implement 
+              interrupt handler as an asynchronous method, not a task !!!
+            - another RTOS may implement interrupt handler as 
+              a kernel thread/task !!!
+            - hw timer management may be different 
+            - sw timer management may be different 
+            - one RTOS may provide system space tasks only 
+            - another RTOS may provide user-space tasks and system space
+              tasks !!!
+        - whenever we discuss about os differences, it will be 
+          more on their core services, not on add on services - 
+          it does not mean, add on services should not be discussed-
+          it is the core services that have more impact when there
+          are changes and add on services can come and go !!!
+        - in many contexts, core services are said to be part 
+          of microkernel of the operating system !!! or in some 
+          contexts, people may just use the term kernel !!! 
+
+
+8. study of certain components of OS may help a developer understand
+   his build environment and execution environment - functional and 
+   performance issues may be better understood, if OS architecture and
+   components are understood !!!
+     - for example:
+             - uniprocessor vs multiprocessor
+                   - services will be used different depending 
+                     upon requirements - say, throughput vs determinism !!!
+             - 32-bit vs 64-bit
+                   - address width and data width 
+                   - data types will be large 
+                   - processing speed and throughput 
+                   - amount of memory space supported will  be large 
+                   - very large applications can be supported !!!
+                   - the binary formats used will be different !!
+
+ 
+             - x86 vs ARM vs PPC 
+
+                   - HAL will be very different 
+                   - processing capacities are different 
+                   - little endian vs big endian  
+
+
+
+9. one such component is memory manangement - another may be cpu scheduling
+   - yet another may be process management - the list continues - 
+   when certain services of operating system are needed directly or 
+   indirectly, understanding the operating system behaviour may 
+   help us use the services reasonably !!!
+
+10. operating systems provide their services via system call APIs - these
+    (application programming interface / application programmer's interface)
+    system call APIs are implemented using system library and system 
+    call interface layer of the operating system !!! system call APIs
+    are dependent on interrupt handling mechanism of the underlying 
+    h/w and operating system as well !!!
+      - we may use operating system services directly or indirectly !!!
+      - we will  be abe to use and able to use efficiently, if 
+        we understand the working of ther services and their limitations!!!
+      - we will be able to understand problems and bugs !!!
+      - we may be able to increase performance of our applications!!!
+             - by using certain special services directly, if needed !!!
+
+11. for the above reasons and also for understanding other activities
+    of the operating system, interrupt mechanism and interrupt handling
+    must be understood !!!
+        - if you are a real time systems engineer, you better learn 
+          about interrupt handling and many such low level mechanisms !!!
+        - this will enable you to understand critical control sections
+          in a computing system and enable to fine tune computing 
+          for real time programming !!! 
+
+12. operating system may be seen as kernel , libraries and utilities, 
+    in a computing system - kernel contains the core components of the
+    operating system - typically, process mgmt.subsystem,
+     physical mm. mgmt.subsystem , 
+    virtual mem. mgmt., file management subsystems, logical file management
+    subsystem, I/O subsystems , device drivers, interrupt subsystem,
+    IPC subsystems, Timer subsystem and many more !!!
+       - HAL is the lowest layer (logically) in the core 
+         components that interacts very closely with processor
+         and may be responsible for the following activities:
+             - MMU management / interaction 
+             - low-level interrupt handling
+                  - HAL will be doing the first level hw 
+                    context saving
+                  - HAL may be involved in interacting with 
+                    interrupt controller(s) 
+                  - HAL may be involved in controlling 
+                    processor's hw interrupt enabling/disabling  
+             - low - level system call handling 
+             - low level process context switching 
+             - low-level exception handling 
+             - many I/O subsystem related - we will see more 
+               of this during I/O buses !!!
+       - there can be several I/O subsystems in the core 
+         of the OS 
+       - each I/O subsystem is responsible for managing 
+         devices and drivers under the given category of 
+         devices !!
+       - it is typically the I/O subsystems and device drivers
+         that interact with HAL as well - other components 
+         also interact, as required !!!
+              - I/o subsystem and drivers are more to do 
+                with peripheral controllers and their
+                management 
+              - HAL just helps in interaction with peripheral
+                controllers !!!
+              - on the other hand, HAL is also responsible 
+                for managing / interacting with processor
+                /interrupt controllers with the help
+                of other subsystems of the core of the OS !!!
+             
+       - subsystems and managers are used interchangeably !!!
+       - there are many subsystems and many components !!
+       - what is a subsystem ??
+           - kernel is the system here !!! kernel is a subsystem
+             of OS
+           - OS is a s/w subsystem of computing system !!!
+           - computing system will be a subsystem of your real system !!!
+             that real system may be a plant in the industry !!!
+           - a component  in a kernel is known as subsystem
+           - there can be one or more components managed
+             by a subsystem - a good example for a component is device driver!!
+              - one more good subsystem  is interrupt subsystem !!!
+              - one more good component is a specific scheduling policy/
+                algorithm !!! there can be several scheduling policies(components) implemented in a given kernel of an operating system !!!these make up 
+                the scheduling subsystem (generic scheduler) 
+Note: there are typically 2 types of kernel architectures !!!
+      one is known as monolithic kernel architecture 
+      and the other is known as microkernel architecture !!!
+      - in this discussion, we will be looking at practical 
+      usage of such architectures rather than the theoretical 
+      definitions !!!
+        - monolithic kernel arch: 
+             - all the core components are said to be built 
+               together into a single large image that is 
+               loaded into the main memory,when the system 
+               is started/booted !!! during the life of a 
+               system boot, all the core components reside
+               in the main memory and cannot be unloaded !!!
+                 - this is a less flexible arrangement for 
+                   most systems !!!
+ 
+        - to provide flexibility and convenience, a microkernel/
+          modular kernel arch. was introduced !!!
+                 - most essential core components are built 
+                   into a single image that is loaded during 
+                   the system startup/booting !!
+                 - additional core components can be added/removed
+                   from the system space as per the system's 
+                   requirements !!! this may be done manually or
+                   automated !!! 
+                  
+                - in certain microkernels, a core component may 
+                  be added and this core component may contain 
+                  one or more tasks !!! this is little more than 
+                  a module !!! 
+                        - what is the difference between a module
+                          and a module that may contain several 
+                          tasks ??? 
+                           - a typical module contains just 
+                             methods and data - when loaded, 
+                             these methods and data are loaded
+                             into system space !!!
+                           - a more sophisticated module may 
+                             create several tasks, when loaded
+                             - this is in addition to loading 
+                             methods and data into system space !!!
+
+
+          
+13. the following is the summary of the big picture in 
+    linux_kernel_internals_concepts_intro.pdf !!!
+
+    - system call interface layer provides a trap handler that is 
+      invoked whenever a system call API is invoked - as per the 
+      system call API and its rules, trap handler with the help
+      of system call table (also located in system call interface layer)
+      will invoke appropriate system call system routine in the 
+      appropriate sub-system of the kernel - in the example shown,
+      process management subsystem is in use !!!
+ 
+    - in the same picture, process management subsystem is shown as 
+      dependent on HAL layer - process management subsystem is 
+      also supposed to contain cpu scheduler, in this picture - 
+      in our discussions, cpu scheduler will be treated as a separate 
+      subsystem - cpu scheduler also is dependent on HAL layer for 
+      some of its activities - one such is process context switching !!!
+
+    - the top most layer of memory management may be treated as 
+      process memory manager/virtual memory manager !! lower layer 
+      of memory management may be treated as physical memory manager!!!
+
+    - top most layer of file management may be treated as logical 
+      file manager - this is supposed to manage different file system 
+      managers, which will inturn be responsible for managing different
+      types of file systems !!!
+
+    - block device management may be treated as an I/O subsystem and
+      device drivers for various block devices are also managed via
+      block device management !!!
+ 
+    - block devices have certain rules for data transfer - they can 
+      transfer data with the kernel in multiples of appropriate 
+      block size - they cannot transfer arbitrarily sized data 
+
+    - in the same picture, character/ byte devices are shown - character
+      devices may transfer data in arbitrary sizes as per their requirements      - this is one of the major differences with respect to block devices-
+      we will se more of this during file management !!!
+
+    - this picture is not complete - there are many other subsystems and
+      their own hierarchy and layering - still, this picture can be a 
+      good starting point !!!
+
+14. following is the summary for the class room big picture :
+
+    - in the picture, there is a dotted line at the top separating 
+      user-space and system-space !!!
+    - user-space may be seen as a set of memory regions with a 
+      set of attributes !!
+    - system space may be seen as a set of memory regions with a 
+      set of attributes !!
+    - the attribute settings are taken care by the kernel, as per 
+      rules of h/w(processor)  and OS !!
+    - these attributes are managed by memory management subsystem - 
+      it is accordingly set for user-space attributes or system space
+      attributes !! processor is responsible for these attributes
+      and operating system exploits these attributes !!! this is
+      achieved using a set of data structures and certain settings
+      in the data structures !!!
+    - in addition, there is a separation between the 2 spaces and 
+      their respective components via priviliges - user-space and 
+      its components have lesser priviliges and system-space and 
+      its components have higher priviliges - this privilige setting
+      is controlled via a set of control bits in one of the processor's
+      registers - again, this control is also done by kernel - we will
+      see more of this during interrupt handling and system call 
+      handling !!!
+          - user-space and system space division is one mechanism- 
+            achieved using a h/w technique - this is more to do with 
+            attributes set with respect to memory regions - we see 
+            more of this during memory management !!!
+ 
+          - lesser privilige of user-space components vs 
+            higher privilige of system-space components is 
+            a different mechanism - achieved using another
+            h/w technique  - this is more to do with cpu's
+            privilige settings !!!
+
+          - however, they are related !!!
+
+
+    - system-space components(when processor is executing in priviliged mode) 
+      have the following priviliges:
+         - can access any part of the memory of the system 
+           as per rules of the system
+         - can access any machine instruction of the underlying 
+           architecture 
+         - can access peripheral  h/w controllers and 
+           registers  as per rules - can also access any control register
+           of the underlying processor !!
+         
+    - user-space components have the following restrictions:
+         - can access only user-space regions of memory 
+         - cannot access all machine instructions of the underlying
+           architecture
+              - what happens is a priviliged machine instruction 
+                is used in an user-space component ??
+                  - processor will generate hw exception and 
+                    os will handle the exception !!!
+         - cannot access h/w controllers and registers without 
+           system calls and help of the kernel components !!    
+
+15. interrupt management !!!
+    - system-space manages interrupt table in the interrupt 
+      subsystem !!
+    - interrupt table is a highly architecture specific table - 
+      it is managed by interrupt subsystem with the help of 
+      HAL 
+    - for each interrupt type/no., a particular entry is maintained
+      in the interrupt table 
+          - let us assume that hw interrupts and hw interrupts
+            that are maskable !!!
+          - what do we mean by different types of interrupts /
+            interrupt nos. ???
+                - different interrupts with different priorities
+                - different hw interrupts are associated/bound      
+                  with different I/O controllers !!!
+                    - one interrupt may be associated with a hw timer
+                    - one interrupt may be associated with network 
+                      controller
+                    - one interrupt may be associated with a 
+                      custom I/O card used for monitoring certain
+                      sensors !!!
+  
+    - one interrupt handler is maintained by interrupt type/no. 
+      in one entry of the interrupt table - this applies to 
+      every interrupt no/type in the computing system - typically,
+      address of the interrupt handler is stored in a given 
+      entry of the interrupt table !!!
+    - it is the responsibility of the kernel to setup a control 
+      register of the processor to point to the system's interrupt 
+      table - whenever a h/w interrupt signal of a particular 
+      interrupt type/no. is generated, processor fetches the corresponding
+      interrupt handler's address from the interrupt table known 
+      to it !!!
+    - let us assume an application is currently executing on the 
+      processor and a timer h/w interrupt is generated by the 
+      timer h/w controller !!
+    - processor does the following , in response to interrupt 
+      signal :
+         - typically other h/w interrupts are blocked/masked  and
+           not serviced when a particular h/w interrupt 
+           is being serviced !!
+         - it does a cpu mode switch and a stack switch - 
+           cpu mode is switched from less priviliged to 
+           more priviliged - stack is switched from user-space
+           to system-space 
+               - we will be studying about cpu's privilige mode
+                 of operation and cpu's less priviliged mode
+                 of operation, in the next set of slides !!!
+               - what is stack memory area in this context ??/
+                  - what is the use of user-space stack ??
+                     - needed for user-space code execution !!!
+                  - what is the use of system space stack ??  
+                     - process contexts may be saved in system space
+                       stack during interrupt handling 
+                     - system stack is used for executing interrupt 
+                       handlers 
+                     - system stack is used for executing system space
+                       code on behalf of processes - one good case is 
+                       a system call API execution by the process !!!
+              
+         - stack switching is done as per rules of the kernel 
+           and help of h/w - certain register(s) may be modified !!
+         - current execution context of the application is saved 
+           in the system stack !!- cpu registers are saved - meaning,
+           this is good enough to save the application's execution
+           context !!
+         - cpu executes a jump to the address of the corresponding 
+           interrupt handler and starts execution of the interrupt 
+           handler !!!
+         - let us assume handler completes its job(??) and 
+           executes a special machine instruction !!
+         - this special machine instruction will reverse the 
+           actions taken when an interrupt was generated - meaning,
+           cpu mode is switched back to less priviliged mode from 
+           priviliged mode of operation !!!
+           registers(old execution context ) is restored - cpu 
+           jumps back to an instruction in the application and 
+           resumes execution of application normally 
+         - this sequence of actions are repeated for every h/w 
+           interrupt and several such interrupts may occur 
+           in one second - these activities are seamless to 
+           the user and developer of the system, but they 
+           do productive work on behalf of device-drivers and
+           applications !!
+
+Note: priviliged mode of processor vs less priviliged mode of 
+      processor is critical for understanding certain aspects
+      of operating system - we will see more along with 
+      system space and user space features !!!!
+         - processor is executing in less priviliged mode - can 
+           we say that active applications/processes execute when 
+           processor is in less priviliged mode !!
+         - processor is executing in priviliged mode - can we say 
+           that components of core of operating system execute 
+           when processor is executing in priviliged mode !!!
+             - privilige here means, corresponding components/code
+               can interact with any hw controller and processor !!! 
+               - meaning, they have full privilige to manipulate hw
+                 resources !!!
+               - they have full priviliges in using resources !!!
+               - they have privilige to access any part of the 
+                 computing system's  memory space !!!
+
+16.  system call APIs use interrupt mechanism to implement 
+     their special jumps - system call APIs use a special machine
+     instruction of the underlying architecture to implement 
+     a special jump similar to h/w interrupts - in this case, 
+     h/w signal is not generated by an external peripheral, but
+     a special jump is generated by a machine instruction !!
+      - most of the steps mentioned for h/w interrupt handler
+        are also applicable for this mechanism
+      - there are certain differences between the two mechanisms-
+        one such is in the interrupt handling part 
+      - in the case of system call APIs, the corresponding interrupt
+        handler will pass control of execution to appropriate 
+        system call system routine of appropriate subsystem - this 
+        is done with the help of system call no. passed by 
+        system call API and using system call table
+          - each I/O interrupt has one interrupt handler in the
+            interrupt table
+          - all system call APIs end up accessing the same 
+            system call interrupt handler - it is the responsibility
+            of the system call interrupt handler to invoke appropriate
+            system call service routine 
+
+ 
+      - in a modern day OS, there can be several system call APIs - 
+        easily, 100s of APIs - each is assigned a fixed system call
+        no. and encoded in its system call API
+      - there is one entry for each system call API in the system 
+        call table and it is indexed by the corresponding system 
+        call no. - the corresponding entry contains pointer to 
+        corresponding system call system routine !!
+      - additional system call APIs and their code may 
+        be added by a skilled developer, if needed !!! 
+             - a typical RTOS system may provide certain special,
+               sophisticated system call APIs that can provide 
+               more control for the applications and these 
+               system call APIs may not be typically available 
+               in a typical GPOS system !!!!
+      - we will be using the term system call(s) very often - 
+        this means, a system call API and its associated 
+        system call system routine !!!
+      - we be saying that a system call is executing - this 
+        means, a system call API is invoked and corresponding 
+        system call system routine is executing in system space !!! 
+
+Note: why interrupt handlers, interrupt subsystem, system call 
+      table and system call system routines are loaded in system space ???
+              - these are expected to be priviliged !!
+              - these components must be isolated and protected 
+                from user-space developers !!! 
+          
+Note: one of the best ways to learn operating systems/(gpos/rtos)
+      is to learn around an entity or a mechanism that provides
+      functionally useful services to applications !!! one such 
+      entity that you may benefit for study as well work is 
+      the process !!! one more such entity that you may benefit 
+      is the memory resource !!! 
+
+17. process management !!
+
+    - who is responsible for the creation of the first process ???
+      - kernel is responsible for creating the initial set 
+        of processes - particularly, init process is the first 
+        user-space process created by the kernel without user's 
+        intervention !!! although, the init process may be 
+        customized by operating system developer !!! these system processes
+        are typically created during boot up of the operating system !!!
+    - eventually, this first process will execute certain system 
+      scripts and provide us an environment for building our 
+      applications and loading our applications !!!  
+    - once such an environment is created, any further processes are
+      created directly or indirectly via system call APIs !!
+    - before understanding process creation, termination and its 
+      states, we must understand what is a process from system 
+      point of view - this is typically known as process management 
+      activities !!!!
+    - from a user space point of view, process is an active application 
+      or a program !!!
+           - refer to a slides in day1 !!!
+
+
+18. following is the description of a process from a system point of 
+    view :
+     - each process in the system is represented and managed via a 
+       process descriptor in the system space !!!process manager 
+       is responsible for creating pds and managing pds !!!
+        - what is a pd, in computing terms - the best term is 
+          pd can be called as a system object !!! 
+
+     - each process in the system is allocated an unique process descr.
+       (pd) - each pd contains information/details of a process and 
+       also contains several nested objects , which in turn describe
+       several resources and information 
+     - pd typically contains following info :
+         - process id 
+         - process state 
+         - scheduling parameters - policy, priority and time-slice 
+                                   details
+         - maintains system stack address - run-time context 
+           is maintained for a process in system - stack - 
+           can you name a process state when system stack is used ???
+                     - blocked state //waiting state !!!
+                     - during system call jump/execution !!!
+                     - during interrupt handling / execution !!!
+
+         - maintains addresses of  active files of this process
+         - maintains memory descriptor 
+         - memory descriptor maintains other descriptors that 
+           describe virtual memory and physical memory of 
+           the process
+         - pd contains fields that help the system to maintain
+           several lists of pds as per state information 
+             - ready state - maintains all pds in ready state
+               in a ready queue !!! one ready queue exists
+               per processor !!!
+             - different waitqueues exits for different 
+               resources !!! one waitqueue may exist 
+               per I/O data channel !!!
+Note: pd maintains info. on behalf of a process and pd is the
+      representative of the process and used by the system, 
+      when needed !!!
+
+
+         - pd may contain credentials of a process - this 
+           is typical in a multi-user environment - based on 
+           the credentials, a process may have more privilige or
+           less privilige(do not confuse this with processor 
+                          privilige)
+         - all pds of active applications/processes are maintained
+           in a table or a list - if it is a table, it is known 
+           as pd table - if it is a list , it is known as master 
+           pd list - table is static in nature and list is more 
+           dynamic in nature - lists are more popular in modern   
+           systems
+                -  a typical GPOS may use a list 
+                - a typical RTOS may use a table !!!
+                  - in the case of a table, it is preallocated
+                  - in the case of a list, it is dynamically allocated !!
+
+         - in addition to the pd list or table, system also 
+           maintains a ready list/ready queue of pds - these 
+           are pds whose state is ready - meaning, waiting 
+           for scheduler to select the process for cpu assigment - 
+           this assumes that other resources are available !!
+       
+         - in addition, system also maintains several waiting lists/
+           waiting queues for h/w and logical resources - when a 
+           specific request for a resource cannot be satisfied, 
+           system adds the corresponding pd to corresponding 
+           wait queue !!
+
+           - can a pd be in master list and ready list ??
+                 - yes 
+   
+           - can a pd be in master list and a wait queue/list ??
+                 - yes 
+
+           - can a pd be in ready list and a wait list ???
+                 - no - this is not practical as per their states !!
+
+         - each pd is assigned an unique id known as pid - most 
+           process system calls and kernel space code use pid
+           to identify a process / pd - we will be encountering 
+           pid usage in many scenarios
+
+
+Note : a process may be defined as below :
+        - an active application that is loaded in the user-space of 
+          the system and is managed with the help of system objects -
+          system objects include pd and related nested objects - 
+          pd mainly maintains info. for managing the process and nested
+          objects manage info related to resource management for the
+          process - in short, a process will have memory allocated 
+          in user space for code/data/heap/stack/other segments and 
+          in system space for pd and related objects !!!
+        - an active instance of an application is typically known as 
+          process 
+        - process is an operating system entity controlled by the 
+          process manager and other subsystems !!!
+
+
+
+Note: operating systems are more comfortable using ids rather
+      than names - for most entities, operating systems will
+      be using ids rather than names !!!
+
+Note: after a process is created, it objects are created, state of
+      pd is set to ready and pd is added to ready queue of the 
+      current processor's scheduler!!! 
+
+Note: scheduler may viewed as following :
+        - a set of methods to implement the scheduling policy or polices
+        - a set of objects/data structures used to manage ready queue
+          ,pds and other run time scheduling information !!!
+        - when a process is created, it is added to ready, but may 
+          not scheduled, immediately - it also depends on the implementation 
+          and scheduling parameters !!! again, these may differ from one 
+          OS to another OS - may differ from gpos to RTOS !!!! 
+
+      - scheduler() is responsible for moving a process from 
+        ready state to running state - meaning, scheduling the 
+        process !!! who is responsible for scheduling the scheduler ???
+             - in most operating systems(including RTOS), scheduler 
+               is typically invoked after a hw interrupt and after 
+               completing the processing of interrupt handler on behalf 
+               of a given hw interrupt event !!!
+             - in addition, in most operating systems(including RTOS), 
+               scheduler is typically invoked after a system call 
+               API or a system API - however, for the current discussion, 
+               let us assume the first case - meaning, hw interrupt processing 
+               followed by scheduler() getting invoked !!! 
+                 - system APIs are provided by components/layers of 
+                   system space - a component may use system API of 
+                   another component or layer - you may come across
+                   these in RTOS systems as well, depending upon 
+                   the work and the environment offered by respective 
+                   RTOS  !!!
+
+         - state of a process is another important info. used 
+           by the system in maintaining processes - typically
+           following states are common:
+                - Ready
+                - Running 
+Note: if a process is said to be scheduler on the processor, what 
+      does this really mean ??? let us assume that scheduler decides
+      which process must be scheduled on the processor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           based on 
+      a scheduling policy - in our case, let us assume that it 
+      is first come first serve and let us also assume that 
+      a fixed time slice/quantum is given to the process, when it is scheduled !!!
+          - this involves dispatching the process on the processor !!!
+          - loading the processor's registers with the values
+            of the context of the process stored in the system 
+            stack of the process !!! these registers may include
+            program counter, stack pointer, general purpose registers
+            and several control registers of the processor 
+          - we will see some more fine details during another context 
+            of discussing !!! 
+          - once a process is dispatched by the scheduler on to the 
+            processor, whatever happens to the process instructions/data 
+           inside the processor, operating system is immune or ignorant !!!
+
+          - blocked/waiting
+          - stopped
+          - a developer or administrator may wish to explicitly and forcibly 
+            stop a process for convenience and resume the process when 
+            needed !! when a process is stopped, 
+            it is moved from ready queue and pd's state is set to stopped -             
+		it is not maintained in any wait queue - its resources are not 
+            freed - still managed in the  pd and when resumed, pd will be 
+            moved to ready queue  
+          - depending upon the environment that you may work, you may not 
+            see stopped state - however, just be aware !!!
+
+            
+          - terminated 
+                     - may have encountered a fatal exception 
+                     - we may forcibly terminate a process
+                     - if a process has completed its work, 
+                       it may terminate voluntarily using a 
+                       process termination system call API !!
+                       - a developer may have to code this explicitly 
+                         or compiler may add this system call API ,
+                         implicitly !!! 
+                     - first 2 are known as abnormal terminatiomn 
+                     - last one is known as normal termination 
+                - whether normal or abnormal termination, all 
+                  resources of the process are freed back to  
+                  the system !!! 
+         - the above are commonly used states - other states do 
+           exist in real systems and they may be extensions of 
+           common states - in a typical Linux system, following 
+           states are in use :
+
+                - Running/runnable 
+                - interruptible wait
+                - uninterruptible wait
+                - stopped
+                - terminated 
+                - dead  
+        ????
+         - when a process is running on the cpu(after scheduling), 
+           it may request for resources - if the resource is available,
+           process will be allocated the resource and it will 
+           progress - if the resource is not available, kernel 
+           changes the state of the process to one of the wait 
+           states and also adds the process to the appropriate 
+           wait queue !!!   
+                 - resources may be of different types
+                 - reading data from a file on disk is       
+                   is also one type of resource requirement
+                 - trying to allocate memory /dynamically 
+                   is also one type of resource requirment 
+                 - trying to access an I/o device for 
+                   data is also one type of resource requirement
+                 - trying to acquire a lock is also one type of 
+                   resource requirement !!1
+                 -depending on the context , you may encounter
+                  several such situations !!!
+                 - in  a typical operating system, a process 
+                   may request for resource via system call APIs !!!
+                 - in a typical RTOS environment, you may use 
+                   sw timers to implement precise delays/time outs !!!
+                   - waiting/sleeping for time out in a sw timer,
+                     is also one form of blocking - this may noty 
+                     be for a resource !!!
+                 - in some cases, you may block also for synchronization !!! 
+                  
+         - when the appropriate resource is available, kernel 
+           will wake-up the process - state of the process will 
+           be changed to ready state and pd will be removed from 
+           wait queue - pd will be added to ready queue 
+            - a system call API may be responsible for 
+              wake up of a process ???
+                   - another process may have released the required 
+                     resources ;
+                        - memory may be available
+                        - an I/O device may be available
+                        - a lock may be available
+                        - a synchronizing semaphore may be 
+                          incremented/signalled 
+            - an interrupt/interrupt handler may be responsible 
+              for wake up of a process ??
+                   - if the resource has an I/O activity associated
+                     with it !!
+         - once in the ready queue, a process/pd will be scheduled 
+           by the scheduler as per its merit
+                   
+         - when a process is scheduled and running on the processor, 
+           it may be preeempted by the kernel, if it has exhausted 
+           its time-slice/time-share - it may be preempted, if another
+           process with higher priority is woken-up !!
+
+              - a process is said to be preempted, if the process is 
+                forcibly removed from the processor, its state is 
+                changed to ready and its current execution context is 
+                saved in the system stack of the process !!!
+
+              - who is responsible for preemption, in these contexts ???
+                 - for the case of time-slicing/time sharing !!!
+                      - timer interrupt handler + scheduler 
+                          - timer interrupt handler is responsible for
+                            maintaining time share/time slice of the 
+                            current process !!!
+                          - how does the timer interrupt handler 
+                            manage time slice of the current process ???
+                              - we will see in the timer int handler !!
+               
+                 - for the case of higher priority process being 
+                   woken up !!!!
+                      - a system call API + scheduler
+                           - a system, call API may release a lock 
+                             and implicitly wake up a process-a higher
+                             priority process waiting for the released
+                             lock is woken up and added to ready state!!! 
+                     
+                      - or an I/O or timer interrupt handler + scheduler 
+                           - a higher priority process may be woken up 
+                             from a sw timer
+                           - a higher priority process may be woken up
+                             due to I/O data availability !!!
+
+                 
+         - when a process is preempted, its state will be changed to 
+           ready and it will be added to ready queue, not wait queue !!
+
+
+
+         - the above process life cycle continues - at any point of 
+           time, there are several processes in the system - processes/pds
+           are scattered in different states and corresponding 
+           lists/queues 
+         - pds and associated objects require physical memory and
+           this is allocated from phy. mem manager , not VMM - 
+           VMM along with PMM will allocate physical memory for
+           user-space sections of the process using virtual memory 
+           techniques !!1
+         - process creation may be defined as follows :
+            - a new pd is created
+            - a new pid is allocated
+            - a program is associated with the pd 
+            - other resources and objects are allocated and 
+              added to the pd (???)
+            - state of the process is changed to ready
+            - pd is added to one or more lists of the process
+              management in the system 
+         - the above resources and objects of a pd are maintained 
+           as long as the process is not terminated 
+         - when a process is terminated normally or abnormally, 
+           resources, objects and pd of the respective process
+           are freed by the system 
+         - there are specific system call APIs involved in process
+           creation and process termination - different APIs may be
+           involved depending upon certain conditions of creation 
+           and termination !! 
+         - a process is normally terminated when the corresponding 
+           code/application executes the appropriate system call API,
+           directly or indirectly !!!
+         - how do we understand the behaviour of abnormal process
+           termination ??
+             - if a process does not respond or does not function
+           as expected, it is normal for users/developers/administrators
+           to forcibly terminate the process - such forcible termination 
+           is done using a system call / system utility to notify /signal
+           the respective process !!!
+             - if a process attempts illegal activities(as mentioned 
+           in class), processor generates an h/w exception - a 
+           h/w exception will lead to interrupt behaviour and corresponding
+           exception handler is invoked !!
+             - exception handlers are maintained in interrupt table 
+               along with interrupt handlers and system call trap 
+               handler
+             - when a specific exception handler is invoked, it is 
+               responsible for notifying the respective process to 
+               terminate abnormally !!!
+            - scheduler is a component of the kernel responsible 
+              for selecting a process to be executed on the processor
+            - how is the scheduler scheduled ??
+               -scheduler may be invoked when a process terminates
+                normally or abnormally !!!
+               - in the case of normal termination, it is invoked by 
+                 the termination system call 
+               - in the case of abnormal termination, it is invoked
+                 by the exception handler !!
+            - scheduler may also be invoked due to preemption - one
+              such preemption is time-slice/time-share based scheduling
+              and timer interrupt handler is responsible for invoking 
+              the scheduler, when time-slice / time-share of a process
+              has expired !!!      
+            - a time-slice/time-share field is maintained in the pd - 
+              this field is updated by the timer interrupt handler and
+              when this value drops to 0, the current process is preempted
+              - meaning, it is removed from the processor, context is
+              saved and added to ready queue !! after this, it is the 
+              responsibility of the timer interrupt handler to invoke 
+              the scheduler !!! scheduler will pick the next eligible 
+              process and assign the processor - these steps are known 
+              as preemption of a process - a process is forcibily removed
+              from the cpu and cpu is reassigned to another process !!!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+    
+
+
+
+
+
+
+
+
+
+
+
+     
+         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+                
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+       
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
