@@ -1,0 +1,470 @@
+
+1. in a typical operating system text, following types of 
+   scheduling policies are discussed :
+   - round-robin with time-slicing(RR) - in this case, time-slice
+     is assumed to be fixed and all processes are supposed 
+     to have equal priorities !!! a process is preempted after its
+     current time-slice is exhausted and added back to the 
+     tail of ready queue - the next process in the head of the ready 
+     queue is chosen by the scheduler for dispatching !!! if a process
+     blocks in a system call API, scheduler is invoked and another
+     process is rescheduled - cpu time is never wasted !!!
+         -multitasking /multiprogramming
+         - what is the benefit ???
+             - all processes will be responsive !!!
+             - concurrency and interactiveness !!
+
+             - fair cpu scheduling among processes !!!
+ 
+      - RR with time slice may also be clubbed with another policy -
+        for example, priority based !!!
+
+
+   - first come first serve (FIFO) - a process at the head of the 
+     ready queue is chosen by the scheduler for dispatching and 
+     it is allowed to continue on the process as long as it does 
+     not block or terminate !! in this case, there is no 
+     time-slicing and all processes are expected to be of equal 
+     priority !!!
+                   - there is no preemption in this policy !!!
+                   - why use this policy ???
+                        - a process must not be preempted arbitrarily
+                          in the middle of its processing
+                        - for batch processing - in this case, 
+                          applications may not be interactive
+                        - this policy may not be a standalone
+                          policy - may be clubbed with another
+                          policy for convenience !!!
+                        - we will see more of this in another context !!
+
+     will you ever use this policy and if so, why would use this 
+     policy ??
+        - can be used, with some implementation tricks - one such 
+          implementation trick is co-operative scheduling - meaning,
+          each process is not allocated a fixed time slice, but 
+          it left to the developer to code in such a way that 
+          a process will complete its current tangible work 
+          and yield the processor to the operating system using 
+          a special system call - yield system call API - this 
+          is better than FCFS and even better than RR - such 
+          approaches may be more useful in reality - once again, 
+          to use a given operating system service, a developer 
+           must understand the underlying principles and the 
+           developer must also understand his own problems !!!
+
+     especially, will you use this policy in a real time operating 
+     system ??
+
+Note: whenever we discuss about scheduling, we discuss assuming that 
+      a process is ready and when it is ready, what is its merit ???
+      - however, there is seldom a real world process that may be
+        independent of other processes or I/o activities in the 
+        systems
+      - these other aspects will decide overall execution of the process
+        and other processes - such an analysis is done at the system level
+        after the processes have been assigned policies and priorities -
+        meaing, providing importance to a process is one thing and
+        a process being depedent on another process is one thing - 
+        depending upon the context, you have to look at the problem from
+        a different perspective !!!
+
+      - one way of calling first come first is to say that processes 
+        are of equal priorities and the scheduler is a priority based 
+        scheduler - everything in the real world is about how implementation !!
+
+
+ 
+
+   - priority based scheduling (PRIO) - each process is assigned 
+     a priority from a range of priorities - higher the priority,
+     higher the importance and vice-versa for lower priorities !!
+     scheduler picks up a process with the highest priority in 
+     the ready queue and that process can execute on the processor
+     as long as it does not block or terminate !!
+        - if a higher priority process enters ready queue, 
+          current process is immediately preempted - this 
+          characteristic is special for this policy !!
+        - a system call may be responsible for waking up 
+          a higher priority process and invoking '
+          the scheduler, immediately or some hw interrupt 
+          event may be responsible for waking up a higher
+          priority process and scheduler invokation
+        - this policy is benefited from system space 
+          preemption !!1
+        - what may be the use of this policy ???
+           - if strict priority and strict preemption are needed
+             for important application processes and important 
+             system processes !!!
+               - name certain system processes, which are 
+                 common !!!! processes that are created 
+                 ,managed by the system for the well being
+                 and benefits of the system - not typically,
+                 system space execution !!!
+                      - init may be a good example
+                      - idle process of the system - meaning,
+                        when there is no process ready in the
+                        system, idle process may be executing !!!
+                      - in a typical GPOS, there are many kernel 
+                        threads - one such kernel thread is 
+                        known as page stealing daemon - it is 
+                        used along with virtual memory manager !!!
+                      - there are many such kernel threads serving 
+                        I/o subsystems in a GPOS
+                      - in real time systems, there may be a master
+                        watch dog process that monitors other processes
+                        and in turn manages a watch dog timer device !!!
+
+
+Note: such type of kernel threads are not common IN rtos SYSTEMS - 
+      you may find the reasons as you encounter - once again, 
+      implementation details will be different !!!
+ 
+
+Note: if you encounter a slightly fine tuned system processes, 
+      accept them !!!
+
+           - decision to use this policy/priority  is in the hands of 
+             developers and administrators - this policy 
+             mostly needs higher priviliges for the developer
+             /administrator - cannot be used by normal developers
+             and users !!!
+           - utilities and APIs are available for enforcing 
+             these policies andpriorities !!!
+       
+   - shortest job first (SJF) - in this case a process with 
+     shortest execution time is picked  by the scheduler from 
+     the ready queue  !!
+         - useful for batch processing !!! 
+   - scheduling policies can be divided into 2 broad categories- 
+     preemptive scheduling policy and non preemptive scheduling 
+     policy !!
+   - a system that supports preemptive scheduling policy along 
+     a fully preemptive behaviour provides very good response 
+     times for applications
+   - a nonpreemptive scheduling policy does not allow preemption
+     even in a fully preemptive system !! 
+
+   - batch processing need not be interactive / need not be 
+     responsive !!! what is the meaning of the above ???
+          - a process /application that needs user-input ??
+                - preemption ensures 
+                - scheduling policy ensures 
+          - a process that must be responsive, not interactive  ???
+                - in an modern system, key board inputs are 
+                  received and processed  by a system process - 
+                  this system process must be responsive !!!
+          - name a process which is not in the above category,
+            but a realistic one ??
+                   - init process 
+                   - downloading a large data file !!!
+                   - disk formatting /file system creation 
+                   - file system defragmentation 
+                   - non interactive s/w installation 
+                   - compiling large applications and system 
+                     s/w  !!!
+                   - data analysis of scientific data !!! 
+Note: you may come across some of the above processes which will 
+      be treated as low priority/off line processes !!!
+
+
+2. in a typical modern operating system, several scheduling policies
+   are implemented and these policies co-exist with each other - in a
+   typical Linux system, following are the policies :
+Note: this section is mainly focussed on discussing the non real time 
+      scheduling policies and this will enable us to understand 
+      the merits of real time scheduling policies and their implementation
+      in addition, this will also enable you to understand why 
+      a GPOS is designed differently from a RTOS !!!
+
+   - initially, let us assume that all processes are of equal 
+     priority or importance !!!
+   - non realtime scheduling policy vs real time scheduling 
+     policy ???
+          - non realtime scheduling policies use less strict 
+            priorities 
+          - real time scheduling policies use strict
+            scheduling priorities  
+   - time-share  based, non real time scheduling policy - in this 
+     policy, each process is allocated a non real time scheduling 
+     priority known as  nice value - nice value is in the range 
+     of -20 to 0 to +19 - lower the value, higher the importance /
+     weightage - higher the value, lower the importance/ weightage-
+     nice values are not absolute priorities - if a nice of 
+     higher weightage is assigned to a process, it will be given 
+     a higher time-share of the processor !!! vice-versa for 
+     nice values with lower nice values !!! default nice value is 
+     0 and all processes are assigned the same - which means, all 
+     processes are assigned equal time-share !!!
+   - what is the difference between time-share based scheduling 
+     policy and time-slice based scheduling policy ???
+     - time-sharing assigns time-shares based on the load 
+       conditions - based on no. of applications/no. of processes !!! 
+     - time-sharing divides the cpu time into slots and 
+       assigns time-shares inside each slot among ready processes
+          - for a slot timing of 20ms 
+          - no of processes is 5 
+          - time share for a process in a slot is 4 ms
+          - no of processes is 10 
+          - time share for a process in a slot is 2ms
+          - no of processes is 20 
+          - time share for a process is 1ms
+          - no of processes is 100 
+          - time share for a process in slot is 1ms 
+          - what is the advantage of time-sharing
+            over timeslicing ???
+             - closer to ideal processor and fine-grained
+               multitasking !!!
+     - this approach minimizes latencies among processes and
+       increases overheads due to more frequent process switching !!!
+     - due the above reasons, it is known a fair-share scheduling 
+       - CFS(completely fair-share)
+     - CFS is based on the thory of an ideal processor - one 
+       that can concurrently execute several processes by 
+       switching very fast between processes, automatically 
+       without scheduler's intervention !!! 
+     - CFS divides cpu time into slots - each slot may be a few
+       milliseconds - say 20ms or 40ms (some value) - based
+       on the given no. of processes, each process is given a 
+       fair time-share in each slot of 20ms or some other value!!
+     - this needs frequent switching and increases overhead, but
+       ensures fairness and responsiveness for processes !!!   
+     - fair share scheduler can do a good job if the total 
+       no of processes in the ready queue are reasonable - 
+       once the total no. of processes in the ready queue 
+       are unreasonable, fair-share scheduler tends towards
+       time-slice - meaning, the time share is fixed, irrespective  
+       of the no. of processes, when the total no of processes
+       is unreasonable !!
+     - time-slice is an extreme form of time-sharing, where 
+       time-share is fixed and does not depend on load 
+       conditions of total no. of processes !! 
+        - time-share is more popular in modern interactive
+          systems !!
+        - a form of time slice scheduling is popular in
+          realtime systems in appropriate scenarios !!!
+   - what is the relevance of nice value priority here ???   
+     - nice value decides time-share of a process within 
+       a slot of a the fair-scheduler - lower the nice value,
+       higher the time share for a process and     
+       vice-versa for higher values of nice values
+     - -20 to 0 to +19 is the range of priorities supported
+        for nice values - -20 is the highest and +19 is lowest -
+        0 is the default value 
+     - by default, system sets the value to 0 
+     - depending upon the nice value, weightage of a process
+       is different - meaning, if a process is given lower
+       nice values, it is assigned higher weightages and 
+       this in turn, gives the process higher time shares
+       in epochs or slots of cpu time !!! on the other hand,
+       processes with higher nice values are provided 
+       lower weightages and in turn, lower time shares !!!
+   
+
+     - let us assume we leave the nice priorities of 
+       processes untouched !! meaning, to default values !!
+       what is the consequence !!!
+        - follows standard policy of time sharing !!!
+
+     - what happens, if set the nice value of a process
+       to -20 ???
+        - higher time share is given to the specific process !!!
+        - what would be the benefit of that process ??
+           - performance and throughput of this process
+             is improved - whether you need to do this or
+             whether there will be improvement in the performance
+             of that process is dependent on the characteristics
+             of the process !!!
+           - it is allocated max. time share in a slot - 
+             cummulatively, it is assigned max. time share
+             as well 
+   
+
+     - what happens, if we set the nice value of a process
+       to +19 ??
+
+           - it will be allocated min. time share in a slot -
+             cummulatively, it will be assigned minimal 
+             time share !!!
+
+   
+
+     - nice values are known non real-time priorities-
+       meaning, these are not strict priorities - in a strict 
+       priority scheme, a process which has highest priority 
+       and ready to execute will never be preempted from 
+       processor - such strict priorities are known as 
+       real-time priorities and associated policies are 
+       known as real-time scheduling policies !!!  
+         - can you interpret this ???
+            - nice values are set as per developers' needs
+              and administ. needs - once set, they may be 
+              modified during run time as needed - or they
+              may be left as it is - this true even for 
+              a real time priority !!!
+            - a process with a lower nice value(higher importance)
+              may be preempted by another process with higher
+              nice value(lower importance) - this is the 
+             reason for non realtime definition !!!
+               - developers of embedded computing may 
+                 understand the significance of this
+                 behaviour in real-time systems and 
+                 RTOS environment !!!
+
+     - based on the scheduling policy of a process, 
+       scheduling parameters may be different - meaning, 
+       relevant scheduling parameters are used and 
+       interpreted by the system - other, irrelevant 
+       parameters are ignored !!!
+
+     - the other policy that is popular is priority based
+       scheduling policy - in this following rules apply:
+       - a process may be assigned a real-time priority,
+         if its policy is set to priority scheduling policy !!
+       - a range of real-time priorities are supported in a
+         system - say, 1-99 is the range in a Linux system !!
+       - lower the value, lower the importance and higher 
+         the value higher the importance !!
+       - when the scheduler selects a process, the highest 
+         priority process is selected and it is allowed 
+         to execute as long as it requires - unless it 
+         terminates or blocks 
+       - when a process with a higher priority than current process
+         is woken-up in the system, current process is immediately 
+         preempted and the higher priority process is rescheduled !!
+       - in a typical modern OS, priority based scheduling policy 
+         is implemented using multi-level ready queues - meaning,
+         one ready queue is maintained per priority level - this 
+         minimizes run-time overheads for the scheduler !!!
+           - understand the efficiency of this arrangement !!!
+       - when the scheduler needs to select a process, it will start
+         with the head of the highest priority ready queue and
+         move to lower priority ready queues !!!
+             - such improvements and real time policy implementations
+               are more and more popular in GPOS systems and taken 
+               for granted in RTOS systems 
+
+             - in this context, what will be the problem if 
+               a single ready queue is maintained, in the place
+               of multiple ready queues !!!
+                    - scheduer's execution overhead will increase
+                      with increased no of processes - if the no 
+                      of processes is less, overhead will be acceptable
+                      - otherwise, if the no of processes is more, 
+                      overheads will be unacceptable - these are very
+                      sensitive when real time operating systems 
+                      are implemented !!!
+
+       - if there are several processes at a given priority level, 
+         they are treated with FIFO policy at that level - one 
+         extreme case is that all processes are at the  same level of the 
+         scheduling priority  - in this case, priority is completely 
+         ignored and FIFO policy is used !! 
+          - priority is the first level of the policy 
+          - if equal priorities are used, FCFS/FIFO policy 
+            is used among equal priority processes !!!
+      - the other modified form of scheduling policy is 
+        RR which has the following characteristics :
+        - when this policy is selected for a process, it also
+          supports real-time priorities and uses the same
+          ready queues of FIFO policy - in fact, processes
+          of both policies co-exist !!!!
+        - the real-time priorities are of the same range as 
+          priority scheduling policy - the same ready queues
+          are shared with priority scheduling policy 
+        - in addition to the above,if a set of processes are
+          assigned RR policy and same level of priority, they
+          will be scheduled using RR policy and a fixed time-slice
+        - in an extreme scenario, there can be all processes with
+          same priority and RR policy - in this scenario, the processes
+          will treated with RR / time-slice policy, not priority 
+          policy     
+            - given the choice of FIFO and RR, which real time 
+             policy will you choose ???
+                - ideally, we must avoid equal priority processes !!!
+                - in the eventuality that it cannot  be avoided,
+                  FIFO or RR choice may depend on application !!!
+
+note: do read the man page of the system call API sched_setscheduler() -
+      it gives clarity on the types of scheduling policies implemented
+      in a typical Unix/Linux system - it can help you read and 
+      understand how a typical OS(gpos/rtos) implement different 
+      policies - read your RTOS manual for similar system call APIs -
+      compare and contrast !!!!
+
+note: refer to sched_yield() - using sched_yield(), developer can 
+      decide when to reschedule and which process must be rescheduled
+      next - this case, developer controls scheduling and such 
+      an arrangement is known as co-operative scheduling !!!
+      - read the man page for usage and working of sched_yield() !!!
+
+note: you can use chrt utility to tune the scheduling parameters
+      of processes whose source code control is not with you !!!1
+
+
+
+            - how can I achive normal RR policy, in this system ??          
+                - set the policy of every process of our applications
+                  to that of RR
+                - it is also the responsibility to set the priorities
+                  of our processes to be equal , in the real-time
+                  priorities range !!1 
+
+       - all these policies co-exist in the system !!
+       - depending upon the requirements, developers or administrators
+         may select appropriate priorities for a process / processes!!
+       - for a normal process, time-sharing policy is good enough -
+         we may increase or decrease its time-share as per requirements!!
+       - for certain very important and critical processes as per 
+         your requirement may be given priority scheduling policy !!!
+         whenever a critical process is ready,it must scheduled immediately
+         with minimal latency !!!
+       - in a case where a set of important processes of equal priority 
+         must be managed, FIFO is a solution or RR is a solution !!!
+       - based on the above, a system may contain several processes 
+         with different policies and priorities !!! what is order
+         of priorities among the processes ???
+       - system has its own priority mapping - priorities of different 
+         policies are mapped to a common range of system priorities - 
+         normalization of priorities is done by the system as below:
+          -20 to +19 are mapped to 100 to 139 
+          1 to 99 are mapped to 0 - 98 (99 is unused)
+       - in the system priorties range of 0 - 139, 0 is the highest and
+         139 is the lowest 
+       - time sharing policy has the lowest priority in the system mapping 
+         and FIFO/RR have equal importance in system mapping - if a 
+         FIFO based process is given the processor, it can execute 
+         as long as it wishes , but RR based process will be preempted
+         if its time slice is exhausted and another equal priority 
+         process is present at the same level !!! 
+
+3. certain conclusions on real-time policies :
+
+    - if certain higher priority processes abuse cpu cycles without 
+      blocking/yielding the processor, lower priority processes 
+      may not get cpu cycles and system as a whole may lose 
+      responsiveness - do note that many system processes may 
+      also be starved and interactiveness of the system as a whole
+      may be affected - this the behaviour that we observed in the 
+      case of a while loop process executing with FIFO policy and 
+      highest priority 
+
+    - it is the responsibility of the developer to prevent such 
+      processes and test such processes/applications rigorously !!!
+
+    - in certain special systems, there may be other hw assisted and
+      operating system support mechanisms that can diagnose such 
+      problems and take corrective actions !!!!
+    
+    - priority based scheduling policy may starve lower priority processes !!!
+      this is theoretically correct, but practically not the responsibility
+      of scheduler !!!  
+
+    - highest priority processes cannot be preempted by lower priority 
+      processes, in this policy ~!!!!
+
+
+
+
+
+
+
