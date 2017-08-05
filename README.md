@@ -4,7 +4,7 @@ In depth DSSD class notes for Linux
 
 ### What is this repository for? ###
 
-* Any concept building /revion
+* Any concept building /revision
 
 ### Contribution guidelines ###
 
