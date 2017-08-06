@@ -1,10 +1,10 @@
 # README #
 
-In depth DSSD class notes for Linux
+Personal Work which not confidential of any past Employer
 
 ### What is this repository for? ###
 
-* Any concept building /revision
+* On demand sharing if needed to showcased the competency
 
 ### Contribution guidelines ###
 
@@ -15,3 +15,9 @@ In depth DSSD class notes for Linux
 ### Who do I talk to? ###
 
 * Atul Kumar   <atulkumarpccs@gmail.com>
+
+### Final product link in & in public domain ? ###
+
+https://www.marutisuzuki.com/map_updation_home.aspx
+https://www.youtube.com/watch?v=h6FC4cgdXEI
+
