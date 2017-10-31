@@ -30,7 +30,7 @@ public:
     void ReceiveFADE(int16_t data);
     void ReceiveSCV(uint16_t data);
 	
-	void SendRequestInformationSource();
+  void SendRequestInformationSource();
     void SendReleaseInformationSource();
     void SendSetEntertainmentSource();
     void ReceiveActiveAudioSource(audioPresCtrlTypes::SourceId sourceId);
