@@ -51,7 +51,7 @@ void SourceInterface::Init()
     settingsProxyAvailable = false;
 
     #ifdef CONNECT_SERVICES
-        audioSettingsProxy = ResourceMaster::getInstance()->getRuntime()->buildProxy<v1_0::com::harman::audio::audioPresCtrl::audioPresCtrlSettingsProxy>(domain2,instance2,connection2);
+        audioSettingsProxy = ResourceMaster::getInstance()->getRuntime()->buildProxy<v1_0::com::audio::audioPresCtrl::audioPresCtrlSettingsProxy>(domain2,instance2,connection2);
     #else
         audioSettingsProxy = nullptr;
     #endif
