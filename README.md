@@ -1,6 +1,7 @@
+:books::notebook_with_decorative_cover::pencil:
 # README #
 
-Personal Work which is not confidential of any past Employer through experience
+* Personal Work which is not confidential of any past Employer through experience
 
 ### What is this repository for? ###
 
